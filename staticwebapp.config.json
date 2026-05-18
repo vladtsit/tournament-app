@@ -12,14 +12,6 @@
     {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/tournamentes",
-      "rewrite": "/tournamentes/index.html"
-    },
-    {
-      "route": "/tournamentes/",
-      "rewrite": "/tournamentes/index.html"
     }
   ],
   "navigationFallback": {
