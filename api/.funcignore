@@ -1,0 +1,9 @@
+bin
+obj
+appsettings.json
+local.settings.json
+.python_packages
+.vscode
+__azurite_db*__.json
+__blobstorage__
+__queuestorage__

@@ -1,0 +1,58 @@
+{
+  "name": "Sunday Pádel (Node 22 + Azure)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": true
+    }
+  },
+
+  "containerEnv": {
+    "NODE_OPTIONS": "--enable-source-maps"
+  },
+
+  "forwardPorts": [4280, 5173, 7071],
+  "portsAttributes": {
+    "4280": { "label": "SWA emulator", "onAutoForward": "openPreview" },
+    "5173": { "label": "Vite dev (app)", "onAutoForward": "silent" },
+    "7071": { "label": "Azure Functions (api)", "onAutoForward": "silent" }
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "remoteUser": "node",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-azurefunctions",
+        "ms-azuretools.vscode-azurestaticwebapps",
+        "ms-azuretools.vscode-cosmosdb",
+        "ms-azuretools.vscode-bicep",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions",
+        "editorconfig.editorconfig"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "azureFunctions.deploySubpath": "api",
+        "azureFunctions.scmDoBuildDuringDeployment": true,
+        "azureFunctions.projectLanguage": "TypeScript",
+        "azureFunctions.projectRuntime": "~4",
+        "azureFunctions.projectLanguageModel": 4
+      }
+    }
+  }
+}

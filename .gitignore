@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+
+# build output
+app/dist/
+api/dist/
+.vite/
+
+# Azure Functions
+api/bin/
+api/obj/
+api/local.settings.json
+.azure/
+.azurefunctions/
+
+# SWA CLI
+.swa/
+
+# logs / caches
+*.log
+.npm/
+.eslintcache
+.tsbuildinfo
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*.log
+.idea/
+
+# env / secrets
+.env
+.env.*
+!.env.example

@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "ms-azuretools.vscode-azurefunctions",
+    "ms-azuretools.vscode-azurestaticwebapps",
+    "ms-azuretools.vscode-cosmosdb",
+    "ms-azuretools.vscode-bicep",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "github.copilot",
+    "github.copilot-chat",
+    "github.vscode-github-actions",
+    "editorconfig.editorconfig"
+  ]
+}
