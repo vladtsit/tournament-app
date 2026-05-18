@@ -147,6 +147,17 @@ Goal: players can register yes/no, set BBQ yes/no, and form teams via instant pa
 - Pinned-message debounce refresh on registration count change (`pinDebounceSeconds`).
 - `team_invites` container is reserved should we want to re-introduce explicit consent for pairing later.
 
+### Team-formation hardening (shipped post-Phase 3)
+
+Protects against misclicks while keeping the one-tap pairing UX.
+
+- **Confirm before pairing** — Mini App prompts `Pair up with <name>?` before calling `POST .../teams`.
+- **`DELETE /api/tournaments/{tournamentId}/teams/{teamId}`** (`functions/teamDisband.ts`) — disband while tournament is `registration_open`; member-only; idempotent (404 on team → 200). Returns `409 cannot_leave_team` once `live|ended`.
+- **Auto-disband on un-register** — `registrationUpsert.ts` calls `shared/teams.disbandTeamForUser` when the player toggles `playing=false`; both `team_slots` + the `teams` doc are deleted so the partner returns to the looking-for-teammate list.
+- **Enriched conflict payloads** — `teamCreate` 409 (`already_in_team` / `partner_already_in_team`) now includes `error.conflict = { teamId, players[] }` so the SPA can show who the player is already paired with.
+- **Shared helper** `api/src/shared/teams.ts` — `disbandTeam(groupId, tournamentId, teamId)` + `disbandTeamForUser(groupId, tournamentId, userId)`.
+- **New i18n keys**: `teams.confirmPair`, `teams.leave`, `teams.leaveConfirm`, `errors.cannot_leave_team`, `errors.not_a_team_member` (en/es/ru).
+
 ---
 
 ## Phase 3 — Live tournament + match results ✅ (live)

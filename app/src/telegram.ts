@@ -138,7 +138,9 @@ export const storage = {
 
 /** Telegram HapticFeedback helpers — safe no-op outside Telegram. */
 export const haptic = {
-  impact(style: "light" | "medium" | "heavy" | "rigid" | "soft" = "light"): void {
+  impact(
+    style: "light" | "medium" | "heavy" | "rigid" | "soft" = "light",
+  ): void {
     try {
       getWebApp()?.HapticFeedback?.impactOccurred(style);
     } catch {

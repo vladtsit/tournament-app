@@ -10,6 +10,7 @@ import "./functions/tournamentCurrent.js";
 import "./functions/registrationUpsert.js";
 import "./functions/teamsLookingForTeammate.js";
 import "./functions/teamCreate.js";
+import "./functions/teamDisband.js";
 import "./functions/tournamentStart.js";
 import "./functions/tournamentEnd.js";
 import "./functions/matchSubmit.js";

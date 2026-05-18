@@ -202,7 +202,17 @@ async function formTeam(
     await containers_.teamSlots().items.create(mySlot);
   } catch (err) {
     if (isConflict(err)) {
-      return errResp(409, "already_in_team", "You are already in a team.");
+      const conflict = await lookupExistingTeam(
+        groupId,
+        tournament.id,
+        userId,
+      );
+      return errResp(
+        409,
+        "already_in_team",
+        "You are already in a team.",
+        conflict,
+      );
     }
     throw err;
   }
@@ -217,10 +227,16 @@ async function formTeam(
       .delete()
       .catch(() => undefined);
     if (isConflict(err)) {
+      const conflict = await lookupExistingTeam(
+        groupId,
+        tournament.id,
+        partnerUserId,
+      );
       return errResp(
         409,
         "partner_already_in_team",
         "Partner is already in a team.",
+        conflict,
       );
     }
     throw err;
@@ -287,8 +303,44 @@ function errResp(
   status: number,
   code: string,
   message: string,
-): { status: number; response: { error: { code: string; message: string } } } {
-  return { status, response: { error: { code, message } } };
+  conflict?: ConflictInfo,
+): {
+  status: number;
+  response: { error: { code: string; message: string; conflict?: ConflictInfo } };
+} {
+  const error: { code: string; message: string; conflict?: ConflictInfo } = {
+    code,
+    message,
+  };
+  if (conflict) error.conflict = conflict;
+  return { status, response: { error } };
+}
+
+interface ConflictInfo {
+  teamId: string;
+  players: Array<{ userId: string; firstName: string; lastName?: string }>;
+}
+
+async function lookupExistingTeam(
+  groupId: string,
+  tournamentId: string,
+  userId: string,
+): Promise<ConflictInfo | undefined> {
+  const slotRead = await containers_
+    .teamSlots()
+    .item(`${tournamentId}_${userId}`, userId)
+    .read<{ teamId: string }>()
+    .catch(() => null);
+  const teamId = slotRead?.resource?.teamId;
+  if (!teamId) return undefined;
+  const teamRead = await containers_
+    .teams()
+    .item(teamId, groupId)
+    .read<TeamDoc>()
+    .catch(() => null);
+  const team = teamRead?.resource;
+  if (!team) return undefined;
+  return { teamId: team.id, players: team.players };
 }
 
 function jsonError(

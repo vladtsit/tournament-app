@@ -32,6 +32,8 @@
     "expired": "La sesión de Telegram ha caducado. Vuelve a abrir la app desde Telegram.",
     "invalid_token": "Tu sesión ha caducado. Vuelve a abrir la app.",
     "rate_limited": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
+    "cannot_leave_team": "Los equipos ya no se pueden cambiar.",
+    "not_a_team_member": "No estás en este equipo.",
     "cosmos_unavailable": "El servicio no está disponible. Inténtalo de nuevo.",
     "not_admin": "Sólo los administradores del grupo pueden hacerlo.",
     "not_a_member": "Ya no eres miembro de este grupo.",
@@ -83,7 +85,10 @@
     "title": "Equipo",
     "you": "Tú",
     "nooneLooking": "Aún nadie más busca compañero.",
-    "pair": "Emparejar"
+    "pair": "Emparejar",
+    "confirmPair": "¿Emparejarte con {{name}}?",
+    "leave": "Salir del equipo",
+    "leaveConfirm": "¿Salir del equipo ({{name}})? Ambos volveréis a la lista de jugadores que buscan compañero."
   },
   "live": {
     "notInTeam": "No estás en un equipo — sólo puedes mirar.",

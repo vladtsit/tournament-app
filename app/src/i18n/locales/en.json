@@ -32,6 +32,8 @@
     "expired": "Telegram session expired. Reopen the app from Telegram.",
     "invalid_token": "Your session has expired. Reopen the app.",
     "rate_limited": "Too many requests. Slow down and try again.",
+    "cannot_leave_team": "Teams can no longer be changed.",
+    "not_a_team_member": "You are not on this team.",
     "cosmos_unavailable": "Service is temporarily unavailable. Try again.",
     "not_admin": "Only group admins can do that.",
     "not_a_member": "You are not a member of this group anymore.",
@@ -83,7 +85,10 @@
     "title": "Team",
     "you": "You",
     "nooneLooking": "No one else is looking for a partner yet.",
-    "pair": "Pair up"
+    "pair": "Pair up",
+    "confirmPair": "Pair up with {{name}}?",
+    "leave": "Leave team",
+    "leaveConfirm": "Leave the team ({{name}})? Both of you will go back to the looking-for-teammate list."
   },
   "live": {
     "notInTeam": "You're not on a team — you can spectate.",

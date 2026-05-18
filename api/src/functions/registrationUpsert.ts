@@ -6,6 +6,7 @@ import {
   IdempotencyConflict,
   IdempotencyInvalidKey,
 } from "../shared/idempotency.js";
+import { disbandTeamForUser } from "../shared/teams.js";
 
 // POST /api/tournaments/{tournamentId}/registrations
 // Body: { playing: boolean, bbq: boolean }
@@ -125,7 +126,23 @@ app.http("registrationUpsert", {
           };
           if (lastName) doc.lastName = lastName;
           await containers_.registrations().items.upsert(doc);
-          return { status: 200, response: { registration: doc } };
+
+          // Auto-disband: if the player toggles playing=false and is on a
+          // team, dissolve it so the partner is freed back to the
+          // looking-for-teammate list.
+          let teamDisbanded = false;
+          if (!playing) {
+            const r = await disbandTeamForUser(
+              ctx.groupId,
+              tournamentId,
+              ctx.userId,
+            );
+            teamDisbanded = r.disbanded;
+          }
+          return {
+            status: 200,
+            response: { registration: doc, teamDisbanded },
+          };
         },
       );
       const resp: HttpResponseInit = {

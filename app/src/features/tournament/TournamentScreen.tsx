@@ -332,7 +332,17 @@ function TeamSection({
   }, [reload]);
 
   const pair = useCallback(
-    async (partnerUserId: string): Promise<void> => {
+    async (
+      partnerUserId: string,
+      partnerLabel: string,
+    ): Promise<void> => {
+      if (
+        typeof window !== "undefined" &&
+        !window.confirm(t("teams.confirmPair", { name: partnerLabel }))
+      ) {
+        return;
+      }
+      haptic.selection();
       setBusy(true);
       setError(null);
       try {
@@ -350,16 +360,52 @@ function TeamSection({
         setBusy(false);
       }
     },
-    [tournamentId, onChange],
+    [tournamentId, onChange, t],
   );
+
+  const leaveTeam = useCallback(async (): Promise<void> => {
+    if (!team) return;
+    const teamLabel = team.players.map(fullName).join(" + ");
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(t("teams.leaveConfirm", { name: teamLabel }))
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/api/tournaments/${tournamentId}/teams/${team.id}`, {
+        method: "DELETE",
+        idempotencyKey: `leave-${tournamentId}-${team.id}-${Date.now()}`,
+      });
+      haptic.notify("success");
+      await onChange();
+    } catch (err) {
+      haptic.notify("error");
+      setError(err instanceof ApiClientError ? err.code : "unknown");
+    } finally {
+      setBusy(false);
+    }
+  }, [tournamentId, team, onChange, t]);
 
   return (
     <section style={cardStyle}>
       <h3 style={sectionTitle}>{t("teams.title")}</h3>
       {team ? (
-        <p>
-          {t("teams.you")}: {team.players.map(fullName).join(" + ")}
-        </p>
+        <>
+          <p style={{ margin: "0 0 8px 0" }}>
+            {t("teams.you")}: {team.players.map(fullName).join(" + ")}
+          </p>
+          <button
+            type="button"
+            onClick={() => void leaveTeam()}
+            disabled={busy}
+            style={btnSmallDanger}
+          >
+            {t("teams.leave")}
+          </button>
+        </>
       ) : loading ? (
         <p>…</p>
       ) : players.filter((p) => !p.isSelf).length === 0 ? (
@@ -373,7 +419,7 @@ function TeamSection({
                 <span>{fullName(p)}</span>
                 <button
                   type="button"
-                  onClick={() => void pair(p.userId)}
+                  onClick={() => void pair(p.userId, fullName(p))}
                   disabled={busy}
                   style={btnSmall}
                 >
@@ -923,6 +969,12 @@ const btnSmall: CSSProperties = {
   ...btnBase,
   padding: "4px 10px",
   fontSize: 13,
+};
+
+const btnSmallDanger: CSSProperties = {
+  ...btnSmall,
+  background: "var(--tg-theme-destructive-text-color, #c0392b)",
+  color: "#fff",
 };
 
 const listRow: CSSProperties = {
