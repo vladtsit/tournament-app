@@ -1,11 +1,11 @@
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
-import { env } from './env.js';
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { env } from "./env.js";
 
 // HS256 session JWT issued after successful Telegram initData validation.
 // Spec §10.6 / §10.7. Bearer-preferred delivery.
 
-const ISSUER = 'tournamentes';
-const AUDIENCE = 'tournamentes-app';
+const ISSUER = "tournamentes";
+const AUDIENCE = "tournamentes-app";
 
 export interface SessionClaims extends JWTPayload {
   /** Telegram numeric user id. */
@@ -31,7 +31,7 @@ export async function issueSession(payload: {
   };
   if (payload.groupId) claims.gid = payload.groupId;
   return await new SignJWT(claims)
-    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
     .setIssuedAt()
@@ -44,8 +44,8 @@ export async function verifySession(token: string): Promise<SessionClaims> {
     issuer: ISSUER,
     audience: AUDIENCE,
   });
-  if (typeof payload.sub !== 'string' || typeof payload['lng'] !== 'string') {
-    throw new Error('invalid_session_claims');
+  if (typeof payload.sub !== "string" || typeof payload["lng"] !== "string") {
+    throw new Error("invalid_session_claims");
   }
   return payload as SessionClaims;
 }

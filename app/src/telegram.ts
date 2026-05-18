@@ -22,14 +22,21 @@ export interface TelegramInitDataUnsafe {
 }
 
 export interface CloudStorage {
-  setItem(key: string, value: string, cb?: (err: string | null, ok?: boolean) => void): void;
+  setItem(
+    key: string,
+    value: string,
+    cb?: (err: string | null, ok?: boolean) => void,
+  ): void;
   getItem(key: string, cb: (err: string | null, value?: string) => void): void;
-  removeItem(key: string, cb?: (err: string | null, ok?: boolean) => void): void;
+  removeItem(
+    key: string,
+    cb?: (err: string | null, ok?: boolean) => void,
+  ): void;
 }
 
 export interface HapticFeedback {
-  impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
-  notificationOccurred(type: 'error' | 'success' | 'warning'): void;
+  impactOccurred(style: "light" | "medium" | "heavy" | "rigid" | "soft"): void;
+  notificationOccurred(type: "error" | "success" | "warning"): void;
   selectionChanged(): void;
 }
 
@@ -61,7 +68,7 @@ export interface TelegramWebApp {
   initDataUnsafe: TelegramInitDataUnsafe;
   version: string;
   platform: string;
-  colorScheme: 'light' | 'dark';
+  colorScheme: "light" | "dark";
   themeParams: Record<string, string>;
   isExpanded: boolean;
   viewportHeight: number;
@@ -85,14 +92,14 @@ declare global {
 }
 
 export function getWebApp(): TelegramWebApp | undefined {
-  return typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
+  return typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
 }
 
 export function isInTelegram(): boolean {
   const wa = getWebApp();
   // `initData` is empty when the page is loaded outside Telegram, even though
   // the script tag may have created the WebApp object.
-  return !!wa && typeof wa.initData === 'string' && wa.initData.length > 0;
+  return !!wa && typeof wa.initData === "string" && wa.initData.length > 0;
 }
 
 /** Promise-wrapped CloudStorage with localStorage fallback. */

@@ -1,7 +1,11 @@
-import { useTranslation } from 'react-i18next';
-import { useTelegramAuth } from './hooks/useTelegramAuth';
-import { setLanguage } from './i18n';
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from './i18n/resolveLocale';
+import { useTranslation } from "react-i18next";
+import { useTelegramAuth } from "./hooks/useTelegramAuth";
+import { setLanguage } from "./i18n";
+import {
+  SUPPORTED_LANGUAGES,
+  type SupportedLanguage,
+} from "./i18n/resolveLocale";
+import { GroupPicker } from "./features/groups/GroupPicker";
 
 export function App(): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -10,49 +14,76 @@ export function App(): JSX.Element {
   return (
     <main
       style={{
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         padding: 16,
         maxWidth: 480,
-        margin: '0 auto',
-        color: 'var(--tg-theme-text-color, inherit)',
-        background: 'var(--tg-theme-bg-color, transparent)',
-        minHeight: '100vh',
+        margin: "0 auto",
+        color: "var(--tg-theme-text-color, inherit)",
+        background: "var(--tg-theme-bg-color, transparent)",
+        minHeight: "100vh",
       }}
     >
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: 20, margin: 0 }}>{t('app.title')}</h1>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h1 style={{ fontSize: 20, margin: 0 }}>{t("app.title")}</h1>
         <LanguagePicker current={i18n.language as SupportedLanguage} />
       </header>
 
       <section style={{ marginTop: 24 }}>
-        {auth.status === 'idle' && <p>…</p>}
-        {auth.status === 'authenticating' && <p>{t('app.authenticating')}</p>}
-        {auth.status === 'not_in_telegram' && <p>{t('app.openFromTelegram')}</p>}
-        {auth.status === 'error' && (
+        {auth.status === "idle" && <p>…</p>}
+        {auth.status === "authenticating" && <p>{t("app.authenticating")}</p>}
+        {auth.status === "not_in_telegram" && (
+          <p>{t("app.openFromTelegram")}</p>
+        )}
+        {auth.status === "error" && (
           <p>
-            {t(`errors.${auth.errorCode ?? 'errorGeneric'}` as const, {
-              defaultValue: t('app.errorGeneric'),
+            {t(`errors.${auth.errorCode ?? "errorGeneric"}` as const, {
+              defaultValue: t("app.errorGeneric"),
             })}
           </p>
         )}
-        {auth.status === 'authenticated' && auth.user && (
-          <p>{t('auth.welcome', { name: auth.user.firstName })}</p>
+        {auth.status === "picking_group" && (
+          <GroupPicker groups={auth.groups} onSelect={auth.selectGroup} />
+        )}
+        {auth.status === "authenticated" && auth.user && (
+          <>
+            <p>{t("auth.welcome", { name: auth.user.firstName })}</p>
+            {auth.group && (
+              <p style={{ fontSize: 13, opacity: 0.8 }}>
+                {t("groupPicker.activeGroup", { title: auth.group.title })}
+              </p>
+            )}
+            {!auth.group && auth.groups.length === 0 && (
+              <p style={{ fontSize: 13, opacity: 0.8 }}>
+                {t("groupPicker.noGroups")}
+              </p>
+            )}
+          </>
         )}
       </section>
     </main>
   );
 }
 
-function LanguagePicker({ current }: { current: SupportedLanguage }): JSX.Element {
+function LanguagePicker({
+  current,
+}: {
+  current: SupportedLanguage;
+}): JSX.Element {
   const { t } = useTranslation();
   const labels: Record<SupportedLanguage, string> = {
-    en: t('common.english'),
-    es: t('common.spanish'),
-    ru: t('common.russian'),
+    en: t("common.english"),
+    es: t("common.spanish"),
+    ru: t("common.russian"),
   };
   return (
     <label style={{ fontSize: 12, opacity: 0.8 }}>
-      <span style={{ marginRight: 4 }}>{t('common.language')}:</span>
+      <span style={{ marginRight: 4 }}>{t("common.language")}:</span>
       <select
         value={current}
         onChange={(e) => {

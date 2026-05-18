@@ -23,37 +23,37 @@ function readNumber(name: string, fallback: number): number {
 
 export const env = {
   get telegramBotToken(): string {
-    return read('TELEGRAM_BOT_TOKEN');
+    return read("TELEGRAM_BOT_TOKEN");
   },
   get telegramBotUsername(): string {
     // Tolerate optional leading @
-    return read('TELEGRAM_BOT_USERNAME').replace(/^@/, '');
+    return read("TELEGRAM_BOT_USERNAME").replace(/^@/, "");
   },
   get telegramWebhookSecret(): string {
-    return read('TELEGRAM_WEBHOOK_SECRET');
+    return read("TELEGRAM_WEBHOOK_SECRET");
   },
   get jwtSecret(): string {
-    return read('JWT_SECRET');
+    return read("JWT_SECRET");
   },
   get jwtTtlSeconds(): number {
-    return readNumber('JWT_TTL_SECONDS', 14400);
+    return readNumber("JWT_TTL_SECONDS", 14400);
   },
   get authDateMaxAgeSeconds(): number {
-    return readNumber('AUTH_DATE_MAX_AGE_SECONDS', 86400);
+    return readNumber("AUTH_DATE_MAX_AGE_SECONDS", 86400);
   },
   get cosmosEndpoint(): string {
-    return read('COSMOS_ENDPOINT');
+    return read("COSMOS_ENDPOINT");
   },
   get cosmosKey(): string {
-    return read('COSMOS_KEY');
+    return read("COSMOS_KEY");
   },
   get cosmosDatabaseId(): string {
-    return read('COSMOS_DATABASE_ID');
+    return read("COSMOS_DATABASE_ID");
   },
   get appBaseUrl(): string | undefined {
-    return readOptional('APP_BASE_URL');
+    return readOptional("APP_BASE_URL");
   },
   get miniAppShortName(): string {
-    return readOptional('MINI_APP_SHORT_NAME') ?? 'app';
+    return readOptional("MINI_APP_SHORT_NAME") ?? "app";
   },
 };

@@ -1,5 +1,5 @@
-import { CosmosClient, type Container, type Database } from '@azure/cosmos';
-import { env } from './env.js';
+import { CosmosClient, type Container, type Database } from "@azure/cosmos";
+import { env } from "./env.js";
 
 // Singleton CosmosClient per Functions host instance (created lazily on first
 // access; reused across invocations). Per spec §7.2.
@@ -40,5 +40,8 @@ export function container(name: string): Container {
 
 // Convenience handles — one per container we use.
 export const containers_ = {
-  users: () => container('users'),
+  users: () => container("users"),
+  groups: () => container("groups"),
+  groupUsers: () => container("group_users"),
+  audit: () => container("audit"),
 };

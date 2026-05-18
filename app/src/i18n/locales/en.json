@@ -19,6 +19,13 @@
     "ok": "OK",
     "cancel": "Cancel"
   },
+  "groupPicker": {
+    "title": "Choose a group",
+    "subtitle": "You belong to more than one group. Pick the one you want to open.",
+    "admin": "admin",
+    "activeGroup": "Group: {{title}}",
+    "noGroups": "You're not in any registered group yet. Open the app from a pinned group message."
+  },
   "errors": {
     "missing_init_data": "Telegram session data missing.",
     "bad_signature": "Telegram session could not be verified.",

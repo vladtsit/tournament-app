@@ -19,6 +19,13 @@
     "ok": "Aceptar",
     "cancel": "Cancelar"
   },
+  "groupPicker": {
+    "title": "Elige un grupo",
+    "subtitle": "Perteneces a más de un grupo. Elige el que quieras abrir.",
+    "admin": "admin",
+    "activeGroup": "Grupo: {{title}}",
+    "noGroups": "Aún no estás en ningún grupo registrado. Abre la app desde el mensaje fijado del grupo."
+  },
   "errors": {
     "missing_init_data": "Faltan los datos de sesión de Telegram.",
     "bad_signature": "No se pudo verificar la sesión de Telegram.",
