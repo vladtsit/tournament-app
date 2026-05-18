@@ -16,6 +16,11 @@ export class AuthError extends Error {
 }
 
 function extractBearer(req: HttpRequest): string | undefined {
+  // We deliberately read a custom header instead of Authorization: Bearer.
+  // SWA managed Functions inject their own internal Authorization header into
+  // every request, which would otherwise be picked up here and fail to verify.
+  const custom = req.headers.get("x-session-token");
+  if (custom) return custom.trim();
   const header =
     req.headers.get("authorization") ?? req.headers.get("Authorization");
   if (!header) return undefined;

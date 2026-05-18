@@ -51,7 +51,7 @@ export async function api<T = unknown>(
     headers["Content-Type"] = "application/json";
   }
   if (sessionToken) {
-    headers["Authorization"] = `Bearer ${sessionToken}`;
+    headers["X-Session-Token"] = sessionToken;
   }
   if (opts.idempotencyKey) {
     headers["Idempotency-Key"] = opts.idempotencyKey;
