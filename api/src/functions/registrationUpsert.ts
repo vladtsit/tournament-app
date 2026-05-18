@@ -34,6 +34,7 @@ interface TournamentDoc {
 interface UserDoc {
   id: string;
   firstName: string;
+  lastName?: string;
 }
 
 interface RegistrationDoc {
@@ -42,6 +43,7 @@ interface RegistrationDoc {
   tournamentId: string;
   userId: string;
   firstName: string;
+  lastName?: string;
   playing: boolean;
   bbq: boolean;
   createdAt: string;
@@ -106,6 +108,7 @@ app.http("registrationUpsert", {
             .read<UserDoc>()
             .catch(() => null);
           const firstName = userRead?.resource?.firstName ?? "Player";
+          const lastName = userRead?.resource?.lastName;
 
           const regId = `${tournamentId}_${ctx.userId}`;
           const existingRead = await containers_
@@ -126,6 +129,7 @@ app.http("registrationUpsert", {
             createdAt: existing?.createdAt ?? now,
             updatedAt: now,
           };
+          if (lastName) doc.lastName = lastName;
           await containers_.registrations().items.upsert(doc);
           return { status: 200, response: { registration: doc } };
         },

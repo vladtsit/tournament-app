@@ -102,7 +102,7 @@ function defaultName(iso: string): string {
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
-  return `Sunday Pádel ${y}-${m}-${day}`;
+  return `Pádel ${y}-${m}-${day}`;
 }
 
 function jsonError(

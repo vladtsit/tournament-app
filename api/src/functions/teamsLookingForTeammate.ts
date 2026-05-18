@@ -19,6 +19,7 @@ interface RegistrationDoc {
   tournamentId: string;
   userId: string;
   firstName: string;
+  lastName?: string;
   playing: boolean;
   bbq: boolean;
 }
@@ -32,6 +33,7 @@ interface TeamSlotDoc {
 interface LookingEntry {
   userId: string;
   firstName: string;
+  lastName?: string;
   isSelf: boolean;
 }
 
@@ -88,11 +90,15 @@ app.http("teamsLookingForTeammate", {
 
     const players: LookingEntry[] = lookups
       .filter((l) => !l.hasSlot)
-      .map((l) => ({
-        userId: l.reg.userId,
-        firstName: l.reg.firstName,
-        isSelf: l.reg.userId === ctx.userId,
-      }));
+      .map((l) => {
+        const e: LookingEntry = {
+          userId: l.reg.userId,
+          firstName: l.reg.firstName,
+          isSelf: l.reg.userId === ctx.userId,
+        };
+        if (l.reg.lastName) e.lastName = l.reg.lastName;
+        return e;
+      });
     players.sort((a, b) => {
       if (a.isSelf !== b.isSelf) return a.isSelf ? -1 : 1;
       return a.firstName.localeCompare(b.firstName);

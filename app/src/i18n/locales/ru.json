@@ -48,7 +48,9 @@
   "tournament": {
     "none": "Сейчас нет открытых турниров.",
     "create": "Создать новый турнир",
-    "counts": "Играют: {{playing}} · BBQ: {{bbq}}"
+    "counts": "Играют: {{playing}} · BBQ: {{bbq}}",
+    "nameLabel": "Название турнира",
+    "namePlaceholder": "напр. Падел суббота 2026-05-23"
   },
   "registration": {
     "title": "Ваша регистрация",

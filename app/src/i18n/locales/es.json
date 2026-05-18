@@ -48,7 +48,9 @@
   "tournament": {
     "none": "No hay ningún torneo abierto ahora mismo.",
     "create": "Crear un nuevo torneo",
-    "counts": "Juegan: {{playing}} · BBQ: {{bbq}}"
+    "counts": "Juegan: {{playing}} · BBQ: {{bbq}}",
+    "nameLabel": "Nombre del torneo",
+    "namePlaceholder": "p. ej. Pádel sábado 2026-05-23"
   },
   "registration": {
     "title": "Tu inscripción",

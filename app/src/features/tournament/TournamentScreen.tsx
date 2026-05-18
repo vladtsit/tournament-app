@@ -5,11 +5,13 @@ import { api, ApiClientError } from "../../apiClient";
 interface PlayerSummary {
   userId: string;
   firstName: string;
+  lastName?: string;
 }
 
 interface RegistrationDoc {
   userId: string;
   firstName: string;
+  lastName?: string;
   playing: boolean;
   bbq: boolean;
 }
@@ -33,7 +35,16 @@ interface CurrentResponse {
 }
 
 interface LookingResponse {
-  players: Array<{ userId: string; firstName: string; isSelf: boolean }>;
+  players: Array<{
+    userId: string;
+    firstName: string;
+    lastName?: string;
+    isSelf: boolean;
+  }>;
+}
+
+function fullName(p: { firstName: string; lastName?: string }): string {
+  return p.lastName ? `${p.firstName} ${p.lastName}` : p.firstName;
 }
 
 interface Props {
@@ -46,6 +57,7 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [draftName, setDraftName] = useState("");
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -68,14 +80,19 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
     setBusy(true);
     setError(null);
     try {
-      await api("/api/tournaments", { method: "POST", body: {} });
+      const name = draftName.trim();
+      await api("/api/tournaments", {
+        method: "POST",
+        body: name ? { name } : {},
+      });
+      setDraftName("");
       await reload();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.code : "unknown");
     } finally {
       setBusy(false);
     }
-  }, [reload]);
+  }, [reload, draftName]);
 
   const upsertRegistration = useCallback(
     async (playing: boolean, bbq: boolean): Promise<void> => {
@@ -111,14 +128,32 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
       <div>
         <p>{t("tournament.none")}</p>
         {isAdmin && (
-          <button
-            type="button"
-            onClick={() => void createTournament()}
-            disabled={busy}
-            style={btnPrimary}
-          >
-            {t("tournament.create")}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <label
+              htmlFor="tournament-name"
+              style={{ fontSize: 13, opacity: 0.8 }}
+            >
+              {t("tournament.nameLabel")}
+            </label>
+            <input
+              id="tournament-name"
+              type="text"
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              placeholder={t("tournament.namePlaceholder")}
+              disabled={busy}
+              maxLength={120}
+              style={inputStyle}
+            />
+            <button
+              type="button"
+              onClick={() => void createTournament()}
+              disabled={busy}
+              style={btnPrimary}
+            >
+              {t("tournament.create")}
+            </button>
+          </div>
         )}
       </div>
     );
@@ -234,7 +269,7 @@ function TeamSection({
       <h3 style={sectionTitle}>{t("teams.title")}</h3>
       {team ? (
         <p>
-          {t("teams.you")}: {team.players.map((p) => p.firstName).join(" + ")}
+          {t("teams.you")}: {team.players.map(fullName).join(" + ")}
         </p>
       ) : loading ? (
         <p>…</p>
@@ -246,7 +281,7 @@ function TeamSection({
             .filter((p) => !p.isSelf)
             .map((p) => (
               <li key={p.userId} style={listRow}>
-                <span>{p.firstName}</span>
+                <span>{fullName(p)}</span>
                 <button
                   type="button"
                   onClick={() => void pair(p.userId)}
@@ -345,4 +380,13 @@ const listRow: CSSProperties = {
   alignItems: "center",
   padding: "6px 0",
   borderBottom: "1px solid var(--tg-theme-section-separator-color, #eee)",
+};
+
+const inputStyle: CSSProperties = {
+  padding: "8px 10px",
+  border: "1px solid var(--tg-theme-section-separator-color, #ccc)",
+  borderRadius: 8,
+  fontSize: 14,
+  background: "var(--tg-theme-bg-color, #fff)",
+  color: "var(--tg-theme-text-color, #000)",
 };

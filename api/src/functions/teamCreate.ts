@@ -34,6 +34,7 @@ interface RegistrationDoc {
   tournamentId: string;
   userId: string;
   firstName: string;
+  lastName?: string;
   playing: boolean;
 }
 
@@ -50,7 +51,7 @@ interface TeamDoc {
   id: string;
   groupId: string;
   tournamentId: string;
-  players: Array<{ userId: string; firstName: string }>;
+  players: Array<{ userId: string; firstName: string; lastName?: string }>;
   status: "active" | "disbanded";
   createdBy: string;
   createdAt: string;
@@ -239,8 +240,8 @@ async function formTeam(
     groupId,
     tournamentId: tournament.id,
     players: [
-      { userId, firstName: myReg.resource.firstName },
-      { userId: partnerUserId, firstName: partnerReg.resource.firstName },
+      playerSummary(userId, myReg.resource),
+      playerSummary(partnerUserId, partnerReg.resource),
     ],
     status: "active",
     createdBy: userId,
@@ -276,6 +277,18 @@ function isConflict(err: unknown): boolean {
     "code" in err &&
     (err as { code: unknown }).code === 409
   );
+}
+
+function playerSummary(
+  userId: string,
+  reg: RegistrationDoc,
+): { userId: string; firstName: string; lastName?: string } {
+  const out: { userId: string; firstName: string; lastName?: string } = {
+    userId,
+    firstName: reg.firstName,
+  };
+  if (reg.lastName) out.lastName = reg.lastName;
+  return out;
 }
 
 function errResp(
