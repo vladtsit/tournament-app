@@ -43,14 +43,33 @@
     "partner_not_registered": "That player isn't registered to play.",
     "not_registered": "Mark yourself as playing first.",
     "partner_is_self": "Pick someone else as a partner.",
-    "idempotency_conflict": "Conflicting request — please retry."
+    "idempotency_conflict": "Conflicting request — please retry.",
+    "invalid_set_count": "A match must have 2 or 3 sets.",
+    "invalid_set_score": "Invalid set score.",
+    "invalid_super_tiebreak": "Super tie-break must be won by 10+ with a 2-point lead.",
+    "no_winner": "No winner — one team must win 2 sets.",
+    "missing_opponent": "Pick an opponent first.",
+    "self_opponent": "You can't play against yourself.",
+    "tournament_not_live": "Tournament isn't live yet.",
+    "not_in_team": "You're not on a team.",
+    "not_a_participant": "You're not in that match.",
+    "cannot_confirm_own_submission": "The opposing team has to confirm.",
+    "opponent_not_found": "Opponent team not found.",
+    "invalid_state": "Not allowed in this tournament state."
   },
   "tournament": {
     "none": "No tournament is open right now.",
     "create": "Start a new tournament",
+    "start": "Start tournament (close registration)",
     "counts": "Playing: {{playing}} · BBQ: {{bbq}}",
     "nameLabel": "Tournament name",
-    "namePlaceholder": "e.g. Saturday Pádel 2026-05-23"
+    "namePlaceholder": "e.g. Saturday Pádel 2026-05-23",
+    "status": {
+      "draft": "Draft",
+      "registration_open": "Open",
+      "live": "Live",
+      "ended": "Ended"
+    }
   },
   "registration": {
     "title": "Your registration",
@@ -62,5 +81,31 @@
     "you": "You",
     "nooneLooking": "No one else is looking for a partner yet.",
     "pair": "Pair up"
+  },
+  "live": {
+    "notInTeam": "You're not on a team — you can spectate.",
+    "submit": "Submit a match",
+    "opponent": "Opponent",
+    "pickOpponent": "— pick a team —",
+    "set": "Set {{n}}",
+    "submitMatch": "Submit match",
+    "recent": "Recent matches",
+    "noMatches": "No matches yet.",
+    "confirm": "Confirm",
+    "dispute": "Dispute",
+    "leaderboard": "Leaderboard",
+    "noTeams": "No teams yet.",
+    "needsMore": "Need {{n}} matches to rank",
+    "matchStatus": {
+      "submitted": "submitted",
+      "confirmed": "confirmed",
+      "disputed": "disputed"
+    },
+    "col": {
+      "team": "Team",
+      "played": "P",
+      "wins": "W",
+      "sets": "Sets"
+    }
   }
 }

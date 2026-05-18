@@ -1,13 +1,6 @@
-import {
-  app,
-  type HttpRequest,
-  type HttpResponseInit,
-} from "@azure/functions";
+import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { containers_ } from "../shared/cosmos.js";
-import {
-  requireGroup,
-  mapGroupContextError,
-} from "../shared/requireGroup.js";
+import { requireGroup, mapGroupContextError } from "../shared/requireGroup.js";
 import {
   withIdempotency,
   IdempotencyConflict,
@@ -86,7 +79,8 @@ app.http("registrationUpsert", {
       .read<TournamentDoc>()
       .catch(() => null);
     const t = tRead?.resource;
-    if (!t) return jsonError(404, "tournament_not_found", "Tournament not found.");
+    if (!t)
+      return jsonError(404, "tournament_not_found", "Tournament not found.");
     if (t.status !== "registration_open" && t.status !== "draft") {
       return jsonError(
         409,

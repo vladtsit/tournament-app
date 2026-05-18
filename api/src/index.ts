@@ -10,6 +10,13 @@ import "./functions/tournamentCurrent.js";
 import "./functions/registrationUpsert.js";
 import "./functions/teamsLookingForTeammate.js";
 import "./functions/teamCreate.js";
+import "./functions/tournamentStart.js";
+import "./functions/matchSubmit.js";
+import "./functions/matchesList.js";
+import "./functions/matchConfirm.js";
+import "./functions/matchDispute.js";
+import "./functions/availableOpponents.js";
+import "./functions/tournamentLeaderboard.js";
 
 // Health probe (kept lightweight; used by SWA + uptime checks).
 app.http("health", {

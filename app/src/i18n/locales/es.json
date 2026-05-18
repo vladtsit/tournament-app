@@ -43,14 +43,33 @@
     "partner_not_registered": "Ese jugador no está inscrito para jugar.",
     "not_registered": "Primero marca que vas a jugar.",
     "partner_is_self": "Elige a otra persona como compañero.",
-    "idempotency_conflict": "Petición conflictiva — inténtalo de nuevo."
+    "idempotency_conflict": "Petición conflictiva — inténtalo de nuevo.",
+    "invalid_set_count": "Un partido debe tener 2 o 3 sets.",
+    "invalid_set_score": "Resultado de set no válido.",
+    "invalid_super_tiebreak": "El super tie-break se gana a 10+ con 2 de ventaja.",
+    "no_winner": "Sin ganador — un equipo debe ganar 2 sets.",
+    "missing_opponent": "Elige un rival primero.",
+    "self_opponent": "No puedes jugar contra ti mismo.",
+    "tournament_not_live": "El torneo aún no está en juego.",
+    "not_in_team": "No estás en un equipo.",
+    "not_a_participant": "No estás en ese partido.",
+    "cannot_confirm_own_submission": "El equipo rival debe confirmar.",
+    "opponent_not_found": "Equipo rival no encontrado.",
+    "invalid_state": "No permitido en este estado del torneo."
   },
   "tournament": {
     "none": "No hay ningún torneo abierto ahora mismo.",
     "create": "Crear un nuevo torneo",
+    "start": "Iniciar torneo (cerrar inscripción)",
     "counts": "Juegan: {{playing}} · BBQ: {{bbq}}",
     "nameLabel": "Nombre del torneo",
-    "namePlaceholder": "p. ej. Pádel sábado 2026-05-23"
+    "namePlaceholder": "p. ej. Pádel sábado 2026-05-23",
+    "status": {
+      "draft": "Borrador",
+      "registration_open": "Abierto",
+      "live": "En juego",
+      "ended": "Finalizado"
+    }
   },
   "registration": {
     "title": "Tu inscripción",
@@ -62,5 +81,31 @@
     "you": "Tú",
     "nooneLooking": "Aún nadie más busca compañero.",
     "pair": "Emparejar"
+  },
+  "live": {
+    "notInTeam": "No estás en un equipo — sólo puedes mirar.",
+    "submit": "Registrar un partido",
+    "opponent": "Rival",
+    "pickOpponent": "— elige un equipo —",
+    "set": "Set {{n}}",
+    "submitMatch": "Registrar partido",
+    "recent": "Partidos recientes",
+    "noMatches": "Aún no hay partidos.",
+    "confirm": "Confirmar",
+    "dispute": "Disputar",
+    "leaderboard": "Clasificación",
+    "noTeams": "Aún no hay equipos.",
+    "needsMore": "Faltan partidos hasta {{n}} para clasificar",
+    "matchStatus": {
+      "submitted": "pendiente",
+      "confirmed": "confirmado",
+      "disputed": "disputado"
+    },
+    "col": {
+      "team": "Equipo",
+      "played": "PJ",
+      "wins": "G",
+      "sets": "Sets"
+    }
   }
 }

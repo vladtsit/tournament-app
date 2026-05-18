@@ -1,8 +1,4 @@
-import {
-  app,
-  type HttpRequest,
-  type HttpResponseInit,
-} from "@azure/functions";
+import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { randomUUID } from "node:crypto";
 import { containers_ } from "../shared/cosmos.js";
 import {

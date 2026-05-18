@@ -1,14 +1,7 @@
-import {
-  app,
-  type HttpRequest,
-  type HttpResponseInit,
-} from "@azure/functions";
+import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { randomUUID } from "node:crypto";
 import { containers_ } from "../shared/cosmos.js";
-import {
-  requireGroup,
-  mapGroupContextError,
-} from "../shared/requireGroup.js";
+import { requireGroup, mapGroupContextError } from "../shared/requireGroup.js";
 import {
   withIdempotency,
   IdempotencyConflict,
@@ -106,7 +99,8 @@ app.http("teamCreate", {
       .read<TournamentDoc>()
       .catch(() => null);
     const t = tRead?.resource;
-    if (!t) return jsonError(404, "tournament_not_found", "Tournament not found.");
+    if (!t)
+      return jsonError(404, "tournament_not_found", "Tournament not found.");
     if (t.status !== "registration_open") {
       return jsonError(
         409,
@@ -156,9 +150,7 @@ async function formTeam(
   partnerUserId: string,
 ): Promise<{
   status: number;
-  response:
-    | { team: TeamDoc }
-    | { error: { code: string; message: string } };
+  response: { team: TeamDoc } | { error: { code: string; message: string } };
 }> {
   // 1) Both must be registered as playing.
   const [myReg, partnerReg] = await Promise.all([

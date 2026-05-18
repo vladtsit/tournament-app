@@ -1,13 +1,6 @@
-import {
-  app,
-  type HttpRequest,
-  type HttpResponseInit,
-} from "@azure/functions";
+import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { containers_ } from "../shared/cosmos.js";
-import {
-  requireGroup,
-  mapGroupContextError,
-} from "../shared/requireGroup.js";
+import { requireGroup, mapGroupContextError } from "../shared/requireGroup.js";
 
 // GET /api/tournaments/current
 // Returns the most recent non-ended tournament for the JWT's group, plus
