@@ -65,7 +65,7 @@ export function App(): JSX.Element {
                   {t("groupPicker.activeGroup", { title: auth.group.title })}
                 </p>
                 <div style={{ marginTop: 16 }}>
-                  <TabbedView isAdmin={auth.group.isAdmin} />
+                  <TabbedView isAdmin={auth.group.isAdmin} groupId={auth.group.groupId} />
                 </div>
               </>
             )}
@@ -86,7 +86,7 @@ type Tab = "current" | "history" | "overall";
 const TAB_STORAGE_KEY = "lastTab";
 const TABS: readonly Tab[] = ["current", "history", "overall"] as const;
 
-function TabbedView({ isAdmin }: { isAdmin: boolean }): JSX.Element {
+function TabbedView({ isAdmin, groupId }: { isAdmin: boolean; groupId: string }): JSX.Element {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("current");
 
@@ -147,7 +147,7 @@ function TabbedView({ isAdmin }: { isAdmin: boolean }): JSX.Element {
           </button>
         ))}
       </nav>
-      {tab === "current" && <TournamentScreen isAdmin={isAdmin} />}
+      {tab === "current" && <TournamentScreen isAdmin={isAdmin} groupId={groupId} />}
       {tab === "history" && <HistoryScreen />}
       {tab === "overall" && <OverallScreen />}
     </div>

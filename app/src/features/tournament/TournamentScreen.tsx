@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiClientError } from "../../apiClient";
-import { haptic } from "../../telegram";
+import { haptic, storage, isInTelegram } from "../../telegram";
+import { useMainButton } from "../../hooks/useMainButton";
 
 interface PlayerSummary {
   userId: string;
@@ -50,9 +51,10 @@ function fullName(p: { firstName: string; lastName?: string }): string {
 
 interface Props {
   isAdmin: boolean;
+  groupId: string;
 }
 
-export function TournamentScreen({ isAdmin }: Props): JSX.Element {
+export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
   const { t } = useTranslation();
   const [data, setData] = useState<CurrentResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -254,6 +256,7 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
       {!isLive && playing && (
         <TeamSection
           tournamentId={data.tournament.id}
+          groupId={groupId}
           team={data.team}
           onChange={reload}
         />
@@ -295,15 +298,18 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
 
 function TeamSection({
   tournamentId,
+  groupId,
   team,
   onChange,
 }: {
   tournamentId: string;
+  groupId: string;
   team: TeamDoc | null;
   onChange: () => Promise<void>;
 }): JSX.Element {
   const { t } = useTranslation();
   const [players, setPlayers] = useState<LookingResponse["players"]>([]);
+  const [lastPartnerId, setLastPartnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -316,16 +322,20 @@ function TeamSection({
     }
     setLoading(true);
     try {
-      const r = await api<LookingResponse>(
-        `/api/tournaments/${tournamentId}/looking-for-teammate`,
-      );
+      const [r, last] = await Promise.all([
+        api<LookingResponse>(
+          `/api/tournaments/${tournamentId}/looking-for-teammate`,
+        ),
+        storage.get(`lastPartner_${groupId}`),
+      ]);
       setPlayers(r.players);
+      setLastPartnerId(last);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.code : "unknown");
     } finally {
       setLoading(false);
     }
-  }, [team, tournamentId]);
+  }, [team, tournamentId, groupId]);
 
   useEffect(() => {
     void reload();
@@ -348,6 +358,7 @@ function TeamSection({
           body: { partnerUserId },
           idempotencyKey: `team-${tournamentId}-${partnerUserId}-${Date.now()}`,
         });
+        void storage.set(`lastPartner_${groupId}`, partnerUserId);
         haptic.notify("success");
         await onChange();
       } catch (err) {
@@ -357,7 +368,7 @@ function TeamSection({
         setBusy(false);
       }
     },
-    [tournamentId, onChange, t],
+    [tournamentId, groupId, onChange, t],
   );
 
   const leaveTeam = useCallback(async (): Promise<void> => {
@@ -411,19 +422,49 @@ function TeamSection({
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {players
             .filter((p) => !p.isSelf)
-            .map((p) => (
-              <li key={p.userId} style={listRow}>
-                <span>{fullName(p)}</span>
-                <button
-                  type="button"
-                  onClick={() => void pair(p.userId, fullName(p))}
-                  disabled={busy}
-                  style={btnSmall}
+            .slice()
+            .sort((a, b) => {
+              if (lastPartnerId) {
+                if (a.userId === lastPartnerId) return -1;
+                if (b.userId === lastPartnerId) return 1;
+              }
+              return fullName(a).localeCompare(fullName(b));
+            })
+            .map((p) => {
+              const recent = p.userId === lastPartnerId;
+              return (
+                <li
+                  key={p.userId}
+                  style={{
+                    ...listRow,
+                    ...(recent
+                      ? {
+                          borderLeft:
+                            "3px solid var(--tg-theme-button-color, #2ea6ff)",
+                          paddingLeft: 6,
+                        }
+                      : null),
+                  }}
                 >
-                  {t("teams.pair")}
-                </button>
-              </li>
-            ))}
+                  <span>
+                    {fullName(p)}
+                    {recent && (
+                      <span style={{ marginLeft: 6, fontSize: 12, opacity: 0.7 }}>
+                        ★
+                      </span>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void pair(p.userId, fullName(p))}
+                    disabled={busy}
+                    style={btnSmall}
+                  >
+                    {t("teams.pair")}
+                  </button>
+                </li>
+              );
+            })}
         </ul>
       )}
       {error && (
@@ -652,6 +693,21 @@ function LiveSection({
     [reload],
   );
 
+  const hasAnySet =
+    (s1a !== "" && s1b !== "") ||
+    (s2a !== "" && s2b !== "") ||
+    (s3a !== "" && s3b !== "");
+  const canSubmit = !!opponentId && hasAnySet && !busy;
+  const inTelegram = isInTelegram();
+
+  useMainButton({
+    visible: inTelegram && !loading,
+    text: t("live.submitMatch"),
+    enabled: canSubmit,
+    showProgress: busy,
+    onClick: () => void submitMatch(),
+  });
+
   if (loading) return <p>…</p>;
 
   const teamLabel = (row: { players: PlayerSummary[] }): string =>
@@ -716,7 +772,7 @@ function LiveSection({
             type="button"
             onClick={() => void submitMatch()}
             disabled={busy}
-            style={btnPrimary}
+            style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
           >
             {t("live.submitMatch")}
           </button>
@@ -935,7 +991,7 @@ const cardStyle: CSSProperties = {
 };
 
 const sectionTitle: CSSProperties = {
-  fontSize: 14,
+  fontSize: 15,
   margin: "0 0 8px 0",
   textTransform: "uppercase",
   letterSpacing: 0.5,
@@ -943,11 +999,11 @@ const sectionTitle: CSSProperties = {
 };
 
 const btnBase: CSSProperties = {
-  padding: "8px 14px",
+  padding: "10px 16px",
   border: "none",
   borderRadius: 8,
   cursor: "pointer",
-  fontSize: 14,
+  fontSize: 16,
 };
 
 const btnPrimary: CSSProperties = {
@@ -964,8 +1020,8 @@ const btnDanger: CSSProperties = {
 
 const btnSmall: CSSProperties = {
   ...btnBase,
-  padding: "4px 10px",
-  fontSize: 13,
+  padding: "6px 12px",
+  fontSize: 14,
 };
 
 const btnSmallDanger: CSSProperties = {
@@ -983,10 +1039,10 @@ const listRow: CSSProperties = {
 };
 
 const inputStyle: CSSProperties = {
-  padding: "8px 10px",
+  padding: "10px 12px",
   border: "1px solid var(--tg-theme-section-separator-color, #ccc)",
   borderRadius: 8,
-  fontSize: 14,
+  fontSize: 16,
   background: "var(--tg-theme-bg-color, #fff)",
   color: "var(--tg-theme-text-color, #000)",
 };
