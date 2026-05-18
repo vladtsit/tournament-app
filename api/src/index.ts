@@ -18,12 +18,27 @@ app.http("health", {
   authLevel: "anonymous",
   handler: async (req) => {
     const headers: Record<string, string> = {};
-    req.headers.forEach((v, k) => {
-      headers[k] = k.toLowerCase().includes("auth") ? `len=${v.length}` : v;
-    });
+    try {
+      const entries =
+        typeof (req.headers as unknown as { entries?: () => Iterable<[string, string]> }).entries === "function"
+          ? Array.from(
+              (req.headers as unknown as { entries: () => Iterable<[string, string]> }).entries(),
+            )
+          : [];
+      for (const [k, v] of entries) {
+        headers[k] = k.toLowerCase().includes("auth") ? `len=${v.length}:prefix=${v.slice(0, 12)}` : v;
+      }
+    } catch (e) {
+      headers["__err"] = e instanceof Error ? e.message : "unknown";
+    }
     return {
       status: 200,
-      jsonBody: { ok: true, ts: new Date().toISOString(), headers },
+      jsonBody: {
+        ok: true,
+        ts: new Date().toISOString(),
+        headerCount: Object.keys(headers).length,
+        headers,
+      },
     };
   },
 });
