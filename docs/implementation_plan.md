@@ -149,9 +149,18 @@ Goal: players can register yes/no, set BBQ yes/no, and form teams via instant pa
 
 ---
 
-## Phase 3 — Live tournament + match results
+## Phase 3 — Live tournament + match results ✅ (live)
 
 Goal: admin starts the tournament; teams set availability; players submit padel results and confirm/dispute; leaderboard updates live; pinned message reflects live state.
+
+**Status: shipped.** Endpoints `tournamentStart`, `matchSubmit`, `matchesList`, `matchConfirm`, `matchDispute`, `availableOpponents`, `tournamentLeaderboard` deployed; SPA `LiveSection` renders opponent picker, score entry, leaderboard, and confirm/dispute controls.
+
+**Simplifications vs original plan**
+
+- **No team-status endpoint** (`available|resting|stopped`) — the live-section opponent picker is computed from teams that exist and haven't played the caller's team yet; an explicit pause toggle wasn't needed for MVP.
+- **No live-state pinned-message rewrite** — pinned message stays as the launch-link message from `/setup`. Live state is visible in the Mini App itself.
+- **Auto-confirm**: lazy reconciliation in `shared/matches.ts` runs on every leaderboard read (no Timer trigger needed on Free tier).
+- **20-min repeat-pair warning**: not implemented; deferred.
 
 **Steps**
 
@@ -179,22 +188,25 @@ Goal: admin starts the tournament; teams set availability; players submit padel 
 
 ---
 
-## Phase 4 — History + overall (cross-tournament) score
+## Phase 4 — History + overall (cross-tournament) score ✅ (live)
 
 Goal: ending a tournament snapshots final standings; per-player `player_stats` aggregates podium points + 0.25 × wins across all ended tournaments in the group.
 
-**Steps**
+**Status: shipped.** Container `player_stats` (`/groupId`, id `ps_{userId}`) created; admin can end a live tournament; `tournaments.finalStandings` snapshotted; `player_stats` updated; History + Overall tabs live in the SPA.
 
-1. **Container**: `player_stats` (`/userId`) keyed by `{groupId}_{userId}_{season}`.
-2. **Finalize endpoint** `POST /api/tournaments/{id}/end` (admin): compute final standings, write `tournaments.finalStandings`, update each player's `player_stats` doc in a single transactional batch per partition (spec §13.2 podium 10/7/5/3/1 + 0.25 × wins).
-3. **History endpoints**: `GET /api/tournaments/history`, `GET /api/tournaments/{id}/leaderboard` (works for ended ones too), `GET /api/groups/{id}/overall-score`.
-4. **Admin recompute** `POST /api/admin/recompute-stats` — recompute from match history if data drifts.
-5. **SPA**: `features/history/` (list of past tournaments + overall-score table).
+**Steps (as shipped)**
+
+1. **Container**: `player_stats` partitioned by `/groupId` (not `/userId` as originally proposed) so all of a group's stats live in a single logical partition for cheap aggregate reads. Doc id `ps_{userId}`.
+2. **Finalize endpoint** `POST /api/tournaments/{id}/end` (admin, in `functions/tournamentEnd.ts`): runs `reconcileMatches`, computes final standings via `scoring.computeFinalStandings` (re-ranks `ranked` ++ `needsMore`), then `playerStats.applyPlayerDeltas` updates each member's doc (parallel point-reads + upserts; no transactional batch — different partitions per tournament are uncommon and the small fan-out is acceptable). Tournament doc upserted with `status='ended'`, `endedAt`, `finalStandings`.
+3. **History + overall endpoints**: `GET /api/tournaments/history?limit=20` (podium-only summary, with user displayName lookup); `GET /api/groups/overall-score?limit=50` (full `player_stats` rows sorted per spec §18.6 tie-break). `GET /api/tournaments/{id}/leaderboard` returns a *frozen* board derived from `finalStandings` when the tournament is ended (`frozen: true`).
+4. **Admin recompute** `POST /api/admin/recompute-stats` — **deferred** (not yet implemented). Recovery path if drift is ever observed.
+5. **SPA**: `features/history/HistoryScreen.tsx` + `OverallScreen.tsx`, wired into a tabbed view in `App.tsx` (Current / History / Overall). Tab persisted in CloudStorage.
 
 **Relevant files**
 
-- `api/src/functions/{adminTournamentEnd,tournamentHistory,overallScore,adminRecomputeStats}.ts`
-- `app/src/features/history/`
+- `api/src/functions/{tournamentEnd,tournamentHistory,overallScore,tournamentLeaderboard}.ts`
+- `api/src/shared/{scoring,playerStats}.ts`
+- `app/src/features/history/{HistoryScreen,OverallScreen}.tsx`
 
 **Verification**
 
@@ -246,9 +258,22 @@ Localization is MVP scope (overrides spec §27.3 which listed it as "later"). Bu
 
 ---
 
-## Phase 5 — Polish
+## Phase 5 — Polish 🟡 (in progress)
 
 Goal: ship-quality UX, admin tooling, exports, light telemetry.
+
+**Status**
+
+- ✅ Telegram **HapticFeedback** on create / register / start / end / pair / submit / confirm / dispute / tab-switch (`telegram.haptic.{impact,notify,selection}`).
+- ✅ **BackButton** wired on non-current tabs (`hooks/useBackButton.ts`).
+- ✅ **CloudStorage** persistence of last-used tab (key `lastTab`).
+- ✅ **Rate limiting**: `shared/rateLimit.ts` — 30 mutating requests / 60s per user, in-memory; auto-enforced inside `requireAuth` for POST/PUT/PATCH/DELETE; surfaces HTTP 429 with `error.code='rate_limited'` and `retryAfterSec` hint via `mapGroupContextError`. i18n key `errors.rate_limited` in en/es/ru.
+- ⏳ **MainButton / BottomButton** integration on submit/score-entry forms — not yet wired (currently uses plain `<button>`s; spec §11).
+- ⏳ **CloudStorage** for *last group* / *last teammate* / *last opponent* — only `lastTab` is persisted today.
+- ⏳ **Admin dashboard polish**: edit/delete result, dispute queue, counts panel.
+- ⏳ **CSV exports** `GET /api/admin/bbq-export`, `GET /api/admin/results-export`.
+- ⏳ **App Insights** Free-tier wiring (1 GB/month cap), structured logs.
+- ⏳ **README + ops docs**: webhook re-registration, secret rotation, "how to add a group".
 
 **Steps**
 
