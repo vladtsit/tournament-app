@@ -16,8 +16,14 @@ app.http("health", {
   route: "health",
   methods: ["GET"],
   authLevel: "anonymous",
-  handler: async () => ({
-    status: 200,
-    jsonBody: { ok: true, ts: new Date().toISOString() },
-  }),
+  handler: async (req) => {
+    const headers: Record<string, string> = {};
+    req.headers.forEach((v, k) => {
+      headers[k] = k.toLowerCase().includes("auth") ? `len=${v.length}` : v;
+    });
+    return {
+      status: 200,
+      jsonBody: { ok: true, ts: new Date().toISOString(), headers },
+    };
+  },
 });
