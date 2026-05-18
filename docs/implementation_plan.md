@@ -14,9 +14,24 @@ End-to-end plan to deliver the Telegram Mini App against the existing free-tier 
 
 ---
 
-## Phase 0 — Infra wiring + sub-path scaffold + auth handshake ✅ (code + infra done; BotFather pending)
+## Phase 0 — Infra wiring + sub-path scaffold + auth handshake ✅ (live; BotFather pending)
 
 Goal: pushing to `main` deploys the SPA at `https://green-ground-018c96b03.7.azurestaticapps.net/tournamentes/`, the placeholder lives at `/`, and a user opening the Mini App from `@tournamentes_bot` gets back a valid session JWT.
+
+**Status (live, verified)**
+
+- `GET /` → 200 placeholder ("Reserved").
+- `GET /tournamentes/` → 200 SPA shell referencing `/tournamentes/assets/…`.
+- `GET /api/config` → 200 `{"appName":"Sunday Pádel","botUsername":"tournamentes_bot","miniAppShortName":"app","languages":["en","es","ru"]}`.
+- `GET /api/health` → 200.
+- Deploy on push to `main` via `.github/workflows/azure-static-web-apps.yml`.
+
+**Deploy lessons learned (post-mortem)**
+
+- **Do NOT set `skip_api_build: true`** on the SWA action — managed Functions deploy needs Oryx to detect Node inside its own container. Pre-built `api/dist` from the runner is not used.
+- **`staticwebapp.config.json` must be inside `output_location`** (we copy it to `app/dist/` via `scripts/copy-placeholder.mjs`).
+- **No duplicate route entries** for `/tournamentes` and `/tournamentes/` — SWA fails the route table validation silently and falls back to no config. The sub-path is served by `app/dist/tournamentes/index.html` (SWA's directory→index.html behaviour) + `navigationFallback`.
+- Final SWA action inputs: `app_location: '/'`, `api_location: 'api'`, `output_location: 'app/dist'`, `app_build_command: 'npm run build:app'`.
 
 **As-built notes**
 
@@ -30,8 +45,8 @@ Goal: pushing to `main` deploys the SPA at `https://green-ground-018c96b03.7.azu
 1. **Deployment token** — done: read via `az staticwebapp secrets list -g rg-freetier -n swa-free --query properties.apiKey -o tsv` and stored as repo secret `AZURE_STATIC_WEB_APPS_API_TOKEN`. The existing workflow `.github/workflows/azure-static-web-apps.yml` deploys on push to `main` and previews PRs.
 2. **Sub-path build** — done: `app/vite.config.ts` sets `base: '/tournamentes/'`, `build.outDir: 'dist/tournamentes'`, `emptyOutDir: true`. Router will switch to `BrowserRouter` with `basename="/tournamentes"` when route screens are added (Phase 1+); for now the SPA renders without a router.
 3. **Placeholder at root** — done: source HTML at `scripts/placeholder.html`; `scripts/copy-placeholder.mjs` runs as part of `npm run build:app` and copies it to `app/dist/index.html`. Kept outside `app/public/` so Vite doesn't bundle it into the SPA.
-4. **SWA routing** — done in [staticwebapp.config.json](../staticwebapp.config.json): routes `/tournamentes` and `/tournamentes/` rewrite to `/tournamentes/index.html`; `navigationFallback.rewrite = /tournamentes/index.html`; `exclude` keeps `/`, `/index.html`, `/api/*`, asset patterns on the placeholder side. `/api/telegram/webhook` remains POST-only anonymous (Phase 1 will register the handler).
-5. **GH workflow** — unchanged. `output_location: 'dist'` still correct since both the placeholder and `/tournamentes/` ship from `app/dist`.
+4. **SWA routing** — done in [staticwebapp.config.json](../staticwebapp.config.json): only `/api/telegram/webhook` (POST/anon) + `/api/*` (anon) route entries; `navigationFallback.rewrite = /tournamentes/index.html` with excludes for `/`, `/index.html`, `/api/*`, asset patterns. `responseOverrides.404` rewrites SPA deep links. (Earlier `/tournamentes` + `/tournamentes/` routes removed — caused duplicate-rule validation failure.)
+5. **GH workflow** — `app_location: '/'`, `api_location: 'api'`, `output_location: 'app/dist'`, `app_build_command: 'npm run build:app'`. CI pre-steps (typecheck/lint/build) kept for early failure; Oryx rebuilds inside the SWA container.
 6. **API skeleton** — done:
    - `shared/env.ts` — centralised env reader (single error path for misconfig).
    - `shared/cosmos.ts` — singleton `CosmosClient` + `containers_.users()` helper.
