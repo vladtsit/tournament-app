@@ -61,6 +61,8 @@
     "none": "No tournament is open right now.",
     "create": "Start a new tournament",
     "start": "Start tournament (close registration)",
+    "end": "End tournament",
+    "endConfirm": "End this tournament? No more matches can be submitted.",
     "counts": "Playing: {{playing}} · BBQ: {{bbq}}",
     "nameLabel": "Tournament name",
     "namePlaceholder": "e.g. Saturday Pádel 2026-05-23",
@@ -106,6 +108,24 @@
       "played": "P",
       "wins": "W",
       "sets": "Sets"
+    }
+  },
+  "tabs": {
+    "current": "Current",
+    "history": "History",
+    "overall": "Overall"
+  },
+  "history": {
+    "empty": "No past tournaments yet.",
+    "noResults": "No results recorded."
+  },
+  "overall": {
+    "empty": "No overall scores yet — end a tournament to start the ranking.",
+    "col": {
+      "player": "Player",
+      "score": "Score",
+      "tournaments": "T",
+      "wins": "W"
     }
   }
 }

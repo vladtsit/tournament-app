@@ -132,6 +132,29 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
     }
   }, [data, reload]);
 
+  const endTournament = useCallback(async (): Promise<void> => {
+    if (!data?.tournament) return;
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(t("tournament.endConfirm"))
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/api/tournaments/${data.tournament.id}/end`, {
+        method: "POST",
+        body: {},
+      });
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.code : "unknown");
+    } finally {
+      setBusy(false);
+    }
+  }, [data, reload, t]);
+
   if (loading) return <p>…</p>;
   if (error)
     return (
@@ -187,7 +210,9 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
       <header>
         <h2 style={{ fontSize: 18, margin: "0 0 4px 0" }}>
           {data.tournament.name}{" "}
-          <span style={statusBadge(status)}>{t(`tournament.status.${status}`)}</span>
+          <span style={statusBadge(status)}>
+            {t(`tournament.status.${status}`)}
+          </span>
         </h2>
         <p style={{ fontSize: 13, opacity: 0.8, margin: 0 }}>
           {t("tournament.counts", {
@@ -237,15 +262,23 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
       )}
 
       {isLive && data.team && (
-        <LiveSection
-          tournamentId={data.tournament.id}
-          myTeam={data.team}
-        />
+        <LiveSection tournamentId={data.tournament.id} myTeam={data.team} />
       )}
       {isLive && !data.team && (
         <section style={cardStyle}>
           <p style={{ opacity: 0.8 }}>{t("live.notInTeam")}</p>
         </section>
+      )}
+
+      {isLive && isAdmin && (
+        <button
+          type="button"
+          onClick={() => void endTournament()}
+          disabled={busy}
+          style={btnDanger}
+        >
+          {t("tournament.end")}
+        </button>
       )}
     </div>
   );
@@ -639,8 +672,9 @@ function LiveSection({
             {matches.slice(0, 20).map((m) => {
               const involvesMe =
                 m.teamAId === myTeam.id || m.teamBId === myTeam.id;
-              const iSubmitted = m.submittedByUserId === myTeam.players[0]?.userId
-                || m.submittedByUserId === myTeam.players[1]?.userId;
+              const iSubmitted =
+                m.submittedByUserId === myTeam.players[0]?.userId ||
+                m.submittedByUserId === myTeam.players[1]?.userId;
               const canConfirm =
                 involvesMe && m.status === "submitted" && !iSubmitted;
               const canDispute = involvesMe && m.status !== "disputed";
@@ -860,6 +894,12 @@ const btnPrimary: CSSProperties = {
   ...btnBase,
   background: "var(--tg-theme-button-color, #2ea6ff)",
   color: "var(--tg-theme-button-text-color, #fff)",
+};
+
+const btnDanger: CSSProperties = {
+  ...btnBase,
+  background: "var(--tg-theme-destructive-text-color, #c0392b)",
+  color: "#fff",
 };
 
 const btnSmall: CSSProperties = {

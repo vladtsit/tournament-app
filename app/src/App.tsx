@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { useTelegramAuth } from "./hooks/useTelegramAuth";
 import { setLanguage } from "./i18n";
 import {
@@ -7,6 +8,8 @@ import {
 } from "./i18n/resolveLocale";
 import { GroupPicker } from "./features/groups/GroupPicker";
 import { TournamentScreen } from "./features/tournament/TournamentScreen";
+import { HistoryScreen } from "./features/history/HistoryScreen";
+import { OverallScreen } from "./features/history/OverallScreen";
 
 export function App(): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -60,7 +63,7 @@ export function App(): JSX.Element {
                   {t("groupPicker.activeGroup", { title: auth.group.title })}
                 </p>
                 <div style={{ marginTop: 16 }}>
-                  <TournamentScreen isAdmin={auth.group.isAdmin} />
+                  <TabbedView isAdmin={auth.group.isAdmin} />
                 </div>
               </>
             )}
@@ -73,6 +76,52 @@ export function App(): JSX.Element {
         )}
       </section>
     </main>
+  );
+}
+
+type Tab = "current" | "history" | "overall";
+
+function TabbedView({ isAdmin }: { isAdmin: boolean }): JSX.Element {
+  const { t } = useTranslation();
+  const [tab, setTab] = useState<Tab>("current");
+  return (
+    <div>
+      <nav
+        style={{
+          display: "flex",
+          gap: 4,
+          marginBottom: 12,
+          borderBottom:
+            "1px solid var(--tg-theme-section-separator-color, #e5e5e5)",
+        }}
+      >
+        {(["current", "history", "overall"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            style={{
+              padding: "8px 12px",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: tab === id ? 600 : 400,
+              borderBottom:
+                tab === id
+                  ? "2px solid var(--tg-theme-button-color, #2ea6ff)"
+                  : "2px solid transparent",
+              color: "inherit",
+            }}
+          >
+            {t(`tabs.${id}`)}
+          </button>
+        ))}
+      </nav>
+      {tab === "current" && <TournamentScreen isAdmin={isAdmin} />}
+      {tab === "history" && <HistoryScreen />}
+      {tab === "overall" && <OverallScreen />}
+    </div>
   );
 }
 

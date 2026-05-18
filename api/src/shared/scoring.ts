@@ -188,3 +188,92 @@ export function aggregateLeaderboard(
     .sort(sort);
   return { ranked, needsMore };
 }
+
+// ---------- Finalization (spec §18.5 + §18.6) ----------
+
+// Podium points per spec §18.6.
+const PODIUM_POINTS = [10, 7, 5, 3, 1] as const;
+const PARTICIPATION_POINT = 1;
+const WIN_BONUS = 0.25;
+
+export interface FinalStanding {
+  rank: number;
+  teamId: string;
+  members: string[];
+  matches: number;
+  wins: number;
+  losses: number;
+  setsFor: number;
+  setsAgainst: number;
+}
+
+export interface PlayerPointsDelta {
+  userId: string;
+  podiumRank: number | null; // 1..5 or null (participation-only)
+  pointsAwarded: number;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  setsFor: number;
+  setsAgainst: number;
+}
+
+export function computeFinalStandings(
+  teamIds: string[],
+  teamMembers: Map<string, string[]>,
+  matches: MatchAggregate[],
+  minMatchesForRanking: number,
+): FinalStanding[] {
+  // For final standings we ignore minMatchesForRanking — every team that
+  // played at least one match is ranked; teams that played 0 fall to the end.
+  const { ranked, needsMore } = aggregateLeaderboard(
+    teamIds,
+    matches,
+    minMatchesForRanking,
+  );
+  const allRows = [...ranked, ...needsMore];
+  // Re-sort needsMore using the same key so we get one combined ranking.
+  // (aggregateLeaderboard returns each subset already sorted by the same
+  // comparator, but ranked rows must precede needsMore per spec §18.3.)
+  return allRows.map((r, i) => ({
+    rank: i + 1,
+    teamId: r.teamId,
+    members: teamMembers.get(r.teamId) ?? [],
+    matches: r.matches,
+    wins: r.wins,
+    losses: r.losses,
+    setsFor: r.setsFor,
+    setsAgainst: r.setsAgainst,
+  }));
+}
+
+export function computePlayerDeltas(
+  standings: FinalStanding[],
+): PlayerPointsDelta[] {
+  const out: PlayerPointsDelta[] = [];
+  for (const s of standings) {
+    const idx = s.rank - 1;
+    const podiumPts =
+      idx < PODIUM_POINTS.length
+        ? PODIUM_POINTS[idx]!
+        : s.matches > 0
+          ? PARTICIPATION_POINT
+          : 0;
+    const podiumRank = idx < PODIUM_POINTS.length ? s.rank : null;
+    // Each player on the team gets the team's podium points + WIN_BONUS×wins.
+    const pts = podiumPts + WIN_BONUS * s.wins;
+    for (const userId of s.members) {
+      out.push({
+        userId,
+        podiumRank,
+        pointsAwarded: pts,
+        matchesPlayed: s.matches,
+        wins: s.wins,
+        losses: s.losses,
+        setsFor: s.setsFor,
+        setsAgainst: s.setsAgainst,
+      });
+    }
+  }
+  return out;
+}

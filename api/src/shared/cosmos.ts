@@ -50,5 +50,6 @@ export const containers_ = {
   teamInvites: () => container("team_invites"),
   teamSlots: () => container("team_slots"),
   matches: () => container("matches"),
+  playerStats: () => container("player_stats"),
   idempotency: () => container("idempotency"),
 };

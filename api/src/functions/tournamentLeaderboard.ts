@@ -43,6 +43,74 @@ app.http("tournamentLeaderboard", {
       return jsonError(400, "missing_tournament_id", "tournamentId required");
     }
 
+    // Ended tournaments: serve frozen finalStandings (spec §18.5).
+    const tRead = await containers_
+      .tournaments()
+      .item(tournamentId, ctx.groupId)
+      .read<{
+        status: string;
+        finalStandings?: Array<{
+          rank: number;
+          teamId: string;
+          members: string[];
+          matches: number;
+          wins: number;
+          losses: number;
+          setsFor: number;
+          setsAgainst: number;
+        }>;
+      }>()
+      .catch(() => null);
+    if (
+      tRead?.resource?.status === "ended" &&
+      tRead.resource.finalStandings
+    ) {
+      const teamsQ = await containers_
+        .teams()
+        .items.query<TeamDoc>(
+          {
+            query:
+              "SELECT * FROM c WHERE c.groupId = @g AND c.tournamentId = @t",
+            parameters: [
+              { name: "@g", value: ctx.groupId },
+              { name: "@t", value: tournamentId },
+            ],
+          },
+          { partitionKey: ctx.groupId },
+        )
+        .fetchAll();
+      const byId = new Map(teamsQ.resources.map((t) => [t.id, t]));
+      const rows = tRead.resource.finalStandings.map((s) => {
+        const team = byId.get(s.teamId);
+        return {
+          teamId: s.teamId,
+          matches: s.matches,
+          wins: s.wins,
+          losses: s.losses,
+          setsFor: s.setsFor,
+          setsAgainst: s.setsAgainst,
+          winRate: s.matches === 0 ? 0 : s.wins / s.matches,
+          setRatio: s.setsFor / Math.max(s.setsAgainst, 1),
+          gameRatio: 0,
+          players:
+            team?.players.map((p) => ({
+              userId: p.userId,
+              firstName: p.firstName,
+              ...(p.lastName ? { lastName: p.lastName } : {}),
+            })) ?? [],
+        };
+      });
+      return {
+        status: 200,
+        jsonBody: {
+          ranked: rows,
+          needsMore: [],
+          minMatchesForRanking: 0,
+          frozen: true,
+        },
+      };
+    }
+
     const [teamsQ, matchesQ, groupRead] = await Promise.all([
       containers_
         .teams()

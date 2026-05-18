@@ -61,6 +61,8 @@
     "none": "No hay ningún torneo abierto ahora mismo.",
     "create": "Crear un nuevo torneo",
     "start": "Iniciar torneo (cerrar inscripción)",
+    "end": "Finalizar torneo",
+    "endConfirm": "¿Finalizar este torneo? No se podrán registrar más partidos.",
     "counts": "Juegan: {{playing}} · BBQ: {{bbq}}",
     "nameLabel": "Nombre del torneo",
     "namePlaceholder": "p. ej. Pádel sábado 2026-05-23",
@@ -106,6 +108,24 @@
       "played": "PJ",
       "wins": "G",
       "sets": "Sets"
+    }
+  },
+  "tabs": {
+    "current": "Actual",
+    "history": "Historial",
+    "overall": "Global"
+  },
+  "history": {
+    "empty": "Aún no hay torneos pasados.",
+    "noResults": "Sin resultados registrados."
+  },
+  "overall": {
+    "empty": "Aún no hay puntuación global — finaliza un torneo para empezar el ranking.",
+    "col": {
+      "player": "Jugador",
+      "score": "Puntos",
+      "tournaments": "T",
+      "wins": "G"
     }
   }
 }
