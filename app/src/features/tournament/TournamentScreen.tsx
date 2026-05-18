@@ -332,10 +332,7 @@ function TeamSection({
   }, [reload]);
 
   const pair = useCallback(
-    async (
-      partnerUserId: string,
-      partnerLabel: string,
-    ): Promise<void> => {
+    async (partnerUserId: string, partnerLabel: string): Promise<void> => {
       if (
         typeof window !== "undefined" &&
         !window.confirm(t("teams.confirmPair", { name: partnerLabel }))

@@ -68,11 +68,14 @@ app.http("teamDisband", {
     }
 
     try {
-      const result = await withIdempotency<DisbandResponse | { error: { code: string; message: string } }>(
+      const result = await withIdempotency<
+        DisbandResponse | { error: { code: string; message: string } }
+      >(
         ctx.userId,
         idemKey,
         { tournamentId, teamId, op: "disband" },
-        async () => disbandTeamHandler(ctx.groupId, tournamentId, teamId, ctx.userId),
+        async () =>
+          disbandTeamHandler(ctx.groupId, tournamentId, teamId, ctx.userId),
       );
       const resp: HttpResponseInit = {
         status: result.status,
@@ -122,7 +125,11 @@ async function disbandTeamHandler(
     return { status: 200, response: { disbanded: true } };
   }
   if (team.tournamentId !== tournamentId) {
-    return errResp(404, "tournament_not_found", "Team is not in this tournament.");
+    return errResp(
+      404,
+      "tournament_not_found",
+      "Team is not in this tournament.",
+    );
   }
   const isMember = team.players.some((p) => p.userId === callerUserId);
   if (!isMember) {

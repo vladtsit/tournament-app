@@ -209,7 +209,7 @@ Goal: ending a tournament snapshots final standings; per-player `player_stats` a
 
 1. **Container**: `player_stats` partitioned by `/groupId` (not `/userId` as originally proposed) so all of a group's stats live in a single logical partition for cheap aggregate reads. Doc id `ps_{userId}`.
 2. **Finalize endpoint** `POST /api/tournaments/{id}/end` (admin, in `functions/tournamentEnd.ts`): runs `reconcileMatches`, computes final standings via `scoring.computeFinalStandings` (re-ranks `ranked` ++ `needsMore`), then `playerStats.applyPlayerDeltas` updates each member's doc (parallel point-reads + upserts; no transactional batch — different partitions per tournament are uncommon and the small fan-out is acceptable). Tournament doc upserted with `status='ended'`, `endedAt`, `finalStandings`.
-3. **History + overall endpoints**: `GET /api/tournaments/history?limit=20` (podium-only summary, with user displayName lookup); `GET /api/groups/overall-score?limit=50` (full `player_stats` rows sorted per spec §18.6 tie-break). `GET /api/tournaments/{id}/leaderboard` returns a *frozen* board derived from `finalStandings` when the tournament is ended (`frozen: true`).
+3. **History + overall endpoints**: `GET /api/tournaments/history?limit=20` (podium-only summary, with user displayName lookup); `GET /api/groups/overall-score?limit=50` (full `player_stats` rows sorted per spec §18.6 tie-break). `GET /api/tournaments/{id}/leaderboard` returns a _frozen_ board derived from `finalStandings` when the tournament is ended (`frozen: true`).
 4. **Admin recompute** `POST /api/admin/recompute-stats` — **deferred** (not yet implemented). Recovery path if drift is ever observed.
 5. **SPA**: `features/history/HistoryScreen.tsx` + `OverallScreen.tsx`, wired into a tabbed view in `App.tsx` (Current / History / Overall). Tab persisted in CloudStorage.
 
@@ -280,7 +280,7 @@ Goal: ship-quality UX, admin tooling, exports, light telemetry.
 - ✅ **CloudStorage** persistence of last-used tab (key `lastTab`).
 - ✅ **Rate limiting**: `shared/rateLimit.ts` — 30 mutating requests / 60s per user, in-memory; auto-enforced inside `requireAuth` for POST/PUT/PATCH/DELETE; surfaces HTTP 429 with `error.code='rate_limited'` and `retryAfterSec` hint via `mapGroupContextError`. i18n key `errors.rate_limited` in en/es/ru.
 - ⏳ **MainButton / BottomButton** integration on submit/score-entry forms — not yet wired (currently uses plain `<button>`s; spec §11).
-- ⏳ **CloudStorage** for *last group* / *last teammate* / *last opponent* — only `lastTab` is persisted today.
+- ⏳ **CloudStorage** for _last group_ / _last teammate_ / _last opponent_ — only `lastTab` is persisted today.
 - ⏳ **Admin dashboard polish**: edit/delete result, dispute queue, counts panel.
 - ⏳ **CSV exports** `GET /api/admin/bbq-export`, `GET /api/admin/results-export`.
 - ⏳ **App Insights** Free-tier wiring (1 GB/month cap), structured logs.

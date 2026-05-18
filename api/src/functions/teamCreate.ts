@@ -202,11 +202,7 @@ async function formTeam(
     await containers_.teamSlots().items.create(mySlot);
   } catch (err) {
     if (isConflict(err)) {
-      const conflict = await lookupExistingTeam(
-        groupId,
-        tournament.id,
-        userId,
-      );
+      const conflict = await lookupExistingTeam(groupId, tournament.id, userId);
       return errResp(
         409,
         "already_in_team",
@@ -306,7 +302,9 @@ function errResp(
   conflict?: ConflictInfo,
 ): {
   status: number;
-  response: { error: { code: string; message: string; conflict?: ConflictInfo } };
+  response: {
+    error: { code: string; message: string; conflict?: ConflictInfo };
+  };
 } {
   const error: { code: string; message: string; conflict?: ConflictInfo } = {
     code,
