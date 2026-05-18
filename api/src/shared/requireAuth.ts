@@ -20,12 +20,7 @@ function extractBearer(req: HttpRequest): string | undefined {
   // SWA managed Functions inject their own internal Authorization header into
   // every request, which would otherwise be picked up here and fail to verify.
   const custom = req.headers.get("x-session-token");
-  if (custom) return custom.trim();
-  const header =
-    req.headers.get("authorization") ?? req.headers.get("Authorization");
-  if (!header) return undefined;
-  const m = header.match(/^Bearer\s+(.+)$/i);
-  return m?.[1]?.trim();
+  return custom ? custom.trim() : undefined;
 }
 
 /**
