@@ -58,7 +58,10 @@
     "not_a_participant": "You're not in that match.",
     "cannot_confirm_own_submission": "The opposing team has to confirm.",
     "opponent_not_found": "Opponent team not found.",
-    "invalid_state": "Not allowed in this tournament state."
+    "invalid_state": "Not allowed in this tournament state.",
+    "invalid_status": "Invalid status.",
+    "nothing_to_update": "Nothing to update.",
+    "invalid_sets": "Invalid sets."
   },
   "tournament": {
     "none": "No tournament is open right now.",
@@ -124,6 +127,15 @@
   "history": {
     "empty": "No past tournaments yet.",
     "noResults": "No results recorded."
+  },
+  "admin": {
+    "overview": "Admin overview",
+    "counts": "Teams: {{teams}} · Submitted: {{submitted}} · Confirmed: {{confirmed}} · Disputed: {{disputed}}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "resolveConfirm": "Mark confirmed",
+    "editPrompt": "Enter sets as e.g. 6-4,3-6,10-7",
+    "deleteConfirm": "Delete this match ({{score}})? This cannot be undone."
   },
   "overall": {
     "empty": "No overall scores yet — end a tournament to start the ranking.",

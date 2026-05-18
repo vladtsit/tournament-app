@@ -27,6 +27,8 @@ export interface MatchDoc {
   disputedAt?: string;
   disputedByUserId?: string;
   autoConfirmed?: boolean;
+  editedAt?: string;
+  editedByUserId?: string;
 }
 
 export function autoConfirmDueAt(submittedAtIso: string): string {

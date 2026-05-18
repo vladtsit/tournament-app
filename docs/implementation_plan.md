@@ -279,9 +279,9 @@ Goal: ship-quality UX, admin tooling, exports, light telemetry.
 - ✅ **BackButton** wired on non-current tabs (`hooks/useBackButton.ts`).
 - ✅ **CloudStorage** persistence of last-used tab (key `lastTab`).
 - ✅ **Rate limiting**: `shared/rateLimit.ts` — 30 mutating requests / 60s per user, in-memory; auto-enforced inside `requireAuth` for POST/PUT/PATCH/DELETE; surfaces HTTP 429 with `error.code='rate_limited'` and `retryAfterSec` hint via `mapGroupContextError`. i18n key `errors.rate_limited` in en/es/ru.
-- ⏳ **MainButton / BottomButton** integration on submit/score-entry forms — not yet wired (currently uses plain `<button>`s; spec §11).
-- ⏳ **CloudStorage** for _last group_ / _last teammate_ / _last opponent_ — only `lastTab` is persisted today.
-- ⏳ **Admin dashboard polish**: edit/delete result, dispute queue, counts panel.
+- ⏳ **CloudStorage** for _last group_ / _last teammate_ / _last opponent_ — `lastTab` + `lastPartner_{groupId}` shipped; `lastOpponent_{tournamentId}` still TODO.
+- 🟡 **MainButton / BottomButton** integration: MainButton drives match submission inside Telegram; remaining flows still use inline buttons.
+- 🟡 **Admin dashboard polish**: counts banner (teams + match status counts), `PATCH /api/matches/{id}` (admin edit + resolve dispute), `DELETE /api/matches/{id}` (admin remove) wired into the live match list. Dispute queue itself still uses the inline list (no separate page).
 - ⏳ **CSV exports** `GET /api/admin/bbq-export`, `GET /api/admin/results-export`.
 - ⏳ **App Insights** Free-tier wiring (1 GB/month cap), structured logs.
 - ⏳ **README + ops docs**: webhook re-registration, secret rotation, "how to add a group".

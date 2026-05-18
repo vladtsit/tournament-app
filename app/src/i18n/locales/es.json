@@ -58,7 +58,10 @@
     "not_a_participant": "No estás en ese partido.",
     "cannot_confirm_own_submission": "El equipo rival debe confirmar.",
     "opponent_not_found": "Equipo rival no encontrado.",
-    "invalid_state": "No permitido en este estado del torneo."
+    "invalid_state": "No permitido en este estado del torneo.",
+    "invalid_status": "Estado inválido.",
+    "nothing_to_update": "Nada que actualizar.",
+    "invalid_sets": "Sets inválidos."
   },
   "tournament": {
     "none": "No hay ningún torneo abierto ahora mismo.",
@@ -124,6 +127,15 @@
   "history": {
     "empty": "Aún no hay torneos pasados.",
     "noResults": "Sin resultados registrados."
+  },
+  "admin": {
+    "overview": "Resumen del admin",
+    "counts": "Equipos: {{teams}} · Enviados: {{submitted}} · Confirmados: {{confirmed}} · Disputados: {{disputed}}",
+    "edit": "Editar",
+    "delete": "Borrar",
+    "resolveConfirm": "Marcar confirmado",
+    "editPrompt": "Ingresa los sets, ej.: 6-4,3-6,10-7",
+    "deleteConfirm": "¿Borrar este partido ({{score}})? No se puede deshacer."
   },
   "overall": {
     "empty": "Aún no hay puntuación global — finaliza un torneo para empezar el ranking.",

@@ -17,6 +17,8 @@ import "./functions/matchSubmit.js";
 import "./functions/matchesList.js";
 import "./functions/matchConfirm.js";
 import "./functions/matchDispute.js";
+import "./functions/matchAdminEdit.js";
+import "./functions/matchAdminDelete.js";
 import "./functions/availableOpponents.js";
 import "./functions/tournamentLeaderboard.js";
 import "./functions/tournamentHistory.js";

@@ -274,7 +274,11 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
       )}
 
       {isLive && data.team && (
-        <LiveSection tournamentId={data.tournament.id} myTeam={data.team} />
+        <LiveSection
+          tournamentId={data.tournament.id}
+          myTeam={data.team}
+          isAdmin={isAdmin}
+        />
       )}
       {isLive && !data.team && (
         <section style={cardStyle}>
@@ -449,7 +453,9 @@ function TeamSection({
                   <span>
                     {fullName(p)}
                     {recent && (
-                      <span style={{ marginLeft: 6, fontSize: 12, opacity: 0.7 }}>
+                      <span
+                        style={{ marginLeft: 6, fontSize: 12, opacity: 0.7 }}
+                      >
                         ★
                       </span>
                     )}
@@ -556,9 +562,11 @@ interface LeaderboardResponse {
 function LiveSection({
   tournamentId,
   myTeam,
+  isAdmin,
 }: {
   tournamentId: string;
   myTeam: TeamDoc;
+  isAdmin: boolean;
 }): JSX.Element {
   const { t } = useTranslation();
   const [opponents, setOpponents] = useState<OpponentRow[]>([]);
@@ -693,6 +701,90 @@ function LiveSection({
     [reload],
   );
 
+  const adminEditMatch = useCallback(
+    async (m: MatchRow): Promise<void> => {
+      if (typeof window === "undefined") return;
+      const current = m.sets.map((s) => `${s.a}-${s.b}`).join(",");
+      const raw = window.prompt(t("admin.editPrompt"), current);
+      if (raw === null) return;
+      const trimmed = raw.trim();
+      if (!trimmed) return;
+      const sets: Array<{ a: number; b: number }> = [];
+      for (const part of trimmed.split(/[,\s]+/)) {
+        if (!part) continue;
+        const match = /^(\d+)[-:](\d+)$/.exec(part);
+        if (!match) {
+          setError("invalid_set_score");
+          return;
+        }
+        sets.push({ a: Number(match[1]), b: Number(match[2]) });
+      }
+      if (sets.length === 0) return;
+      setBusy(true);
+      setError(null);
+      try {
+        await api(`/api/matches/${m.id}`, {
+          method: "PATCH",
+          body: { sets },
+        });
+        haptic.notify("success");
+        await reload();
+      } catch (err) {
+        haptic.notify("error");
+        setError(err instanceof ApiClientError ? err.code : "unknown");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [reload, t],
+  );
+
+  const adminForceConfirm = useCallback(
+    async (matchId: string): Promise<void> => {
+      setBusy(true);
+      setError(null);
+      try {
+        await api(`/api/matches/${matchId}`, {
+          method: "PATCH",
+          body: { status: "confirmed" },
+        });
+        haptic.notify("success");
+        await reload();
+      } catch (err) {
+        haptic.notify("error");
+        setError(err instanceof ApiClientError ? err.code : "unknown");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [reload],
+  );
+
+  const adminDeleteMatch = useCallback(
+    async (m: MatchRow): Promise<void> => {
+      const label = `${m.sets.map((s) => `${s.a}-${s.b}`).join(", ")}`;
+      if (
+        typeof window !== "undefined" &&
+        !window.confirm(t("admin.deleteConfirm", { score: label }))
+      ) {
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      try {
+        await api(`/api/matches/${m.id}`, { method: "DELETE" });
+        haptic.notify("success");
+        await reload();
+      } catch (err) {
+        haptic.notify("error");
+        setError(err instanceof ApiClientError ? err.code : "unknown");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [reload, t],
+  );
+
   const hasAnySet =
     (s1a !== "" && s1b !== "") ||
     (s2a !== "" && s2b !== "") ||
@@ -725,6 +817,20 @@ function LiveSection({
 
   return (
     <>
+      {isAdmin && (
+        <section style={cardStyle}>
+          <h3 style={sectionTitle}>{t("admin.overview")}</h3>
+          <p style={{ margin: 0, fontSize: 14 }}>
+            {t("admin.counts", {
+              teams:
+                (board?.ranked.length ?? 0) + (board?.needsMore.length ?? 0),
+              submitted: matches.filter((m) => m.status === "submitted").length,
+              confirmed: matches.filter((m) => m.status === "confirmed").length,
+              disputed: matches.filter((m) => m.status === "disputed").length,
+            })}
+          </p>
+        </section>
+      )}
       <section style={cardStyle}>
         <h3 style={sectionTitle}>{t("live.submit")}</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -805,7 +911,7 @@ function LiveSection({
                       [{t(`live.matchStatus.${m.status}`)}]
                     </em>
                   </span>
-                  <span style={{ display: "flex", gap: 6 }}>
+                  <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {canConfirm && (
                       <button
                         type="button"
@@ -824,6 +930,36 @@ function LiveSection({
                         style={btnSmall}
                       >
                         {t("live.dispute")}
+                      </button>
+                    )}
+                    {isAdmin && m.status === "disputed" && (
+                      <button
+                        type="button"
+                        onClick={() => void adminForceConfirm(m.id)}
+                        disabled={busy}
+                        style={btnSmall}
+                      >
+                        {t("admin.resolveConfirm")}
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => void adminEditMatch(m)}
+                        disabled={busy}
+                        style={btnSmall}
+                      >
+                        {t("admin.edit")}
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => void adminDeleteMatch(m)}
+                        disabled={busy}
+                        style={btnSmallDanger}
+                      >
+                        {t("admin.delete")}
                       </button>
                     )}
                   </span>
