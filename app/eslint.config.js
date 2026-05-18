@@ -1,5 +1,6 @@
 // Flat config (ESLint 9+)
 import js from '@eslint/js';
+import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -13,6 +14,7 @@ export default [
         languageOptions: {
             parser: tsParser,
             parserOptions: { ecmaVersion: 'latest', sourceType: 'module', ecmaFeatures: { jsx: true } },
+            globals: { ...globals.browser, JSX: 'readonly' },
         },
         plugins: {
             '@typescript-eslint': tsPlugin,

@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Pádel del Domingo",
+    "authenticating": "Autenticando…",
+    "openFromTelegram": "Abre esta aplicación desde Telegram.",
+    "errorGeneric": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "auth": {
+    "welcome": "Bienvenido, {{name}}",
+    "loading": "Iniciando sesión…"
+  },
+  "common": {
+    "language": "Idioma",
+    "english": "Inglés",
+    "spanish": "Español",
+    "russian": "Ruso",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "ok": "Aceptar",
+    "cancel": "Cancelar"
+  },
+  "errors": {
+    "missing_init_data": "Faltan los datos de sesión de Telegram.",
+    "bad_signature": "No se pudo verificar la sesión de Telegram.",
+    "expired": "La sesión de Telegram ha caducado. Vuelve a abrir la app desde Telegram.",
+    "invalid_token": "Tu sesión ha caducado. Vuelve a abrir la app.",
+    "cosmos_unavailable": "El servicio no está disponible. Inténtalo de nuevo."
+  }
+}

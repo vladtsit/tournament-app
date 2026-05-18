@@ -12,14 +12,29 @@
     {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/tournamentes",
+      "rewrite": "/tournamentes/index.html"
+    },
+    {
+      "route": "/tournamentes/",
+      "rewrite": "/tournamentes/index.html"
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/api/*", "/assets/*", "/*.{png,jpg,jpeg,gif,svg,webp,ico,css,js,map,webmanifest}"]
+    "rewrite": "/tournamentes/index.html",
+    "exclude": [
+      "/",
+      "/index.html",
+      "/api/*",
+      "/assets/*",
+      "/tournamentes/assets/*",
+      "/*.{png,jpg,jpeg,gif,svg,webp,ico,css,js,map,webmanifest,txt,xml}"
+    ]
   },
   "responseOverrides": {
-    "404": { "rewrite": "/index.html", "statusCode": 200 }
+    "404": { "rewrite": "/tournamentes/index.html", "statusCode": 200 }
   },
   "globalHeaders": {
     "Content-Security-Policy": "default-src 'self'; script-src 'self' https://telegram.org https://*.telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.telegram.org; frame-ancestors https://web.telegram.org https://*.telegram.org;",

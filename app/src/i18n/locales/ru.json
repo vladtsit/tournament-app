@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Воскресный падел",
+    "authenticating": "Авторизация…",
+    "openFromTelegram": "Откройте приложение из Telegram.",
+    "errorGeneric": "Что-то пошло не так. Попробуйте ещё раз."
+  },
+  "auth": {
+    "welcome": "Привет, {{name}}",
+    "loading": "Выполняется вход…"
+  },
+  "common": {
+    "language": "Язык",
+    "english": "Английский",
+    "spanish": "Испанский",
+    "russian": "Русский",
+    "retry": "Повторить",
+    "close": "Закрыть",
+    "ok": "ОК",
+    "cancel": "Отмена"
+  },
+  "errors": {
+    "missing_init_data": "Отсутствуют данные сессии Telegram.",
+    "bad_signature": "Не удалось проверить сессию Telegram.",
+    "expired": "Сессия Telegram истекла. Откройте приложение снова из Telegram.",
+    "invalid_token": "Сессия истекла. Откройте приложение заново.",
+    "cosmos_unavailable": "Сервис временно недоступен. Попробуйте позже."
+  }
+}

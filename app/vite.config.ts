@@ -1,8 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// SPA is served under `/tournamentes/` on Azure Static Web Apps; the SWA root
+// hosts a separate static placeholder. Build output layout (under `dist/`):
+//
+//   dist/
+//     index.html              ← placeholder (copied by scripts/copy-placeholder.mjs)
+//     tournamentes/
+//       index.html            ← SPA entry
+//       assets/...
+//
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/tournamentes/',
   plugins: [react()],
   server: {
     port: 5173,
@@ -15,5 +25,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    outDir: 'dist/tournamentes',
+    emptyOutDir: true,
   },
 });

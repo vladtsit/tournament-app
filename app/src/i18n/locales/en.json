@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Sunday Pádel",
+    "authenticating": "Authenticating…",
+    "openFromTelegram": "Please open this app from Telegram.",
+    "errorGeneric": "Something went wrong. Try again."
+  },
+  "auth": {
+    "welcome": "Welcome, {{name}}",
+    "loading": "Signing you in…"
+  },
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "spanish": "Spanish",
+    "russian": "Russian",
+    "retry": "Retry",
+    "close": "Close",
+    "ok": "OK",
+    "cancel": "Cancel"
+  },
+  "errors": {
+    "missing_init_data": "Telegram session data missing.",
+    "bad_signature": "Telegram session could not be verified.",
+    "expired": "Telegram session expired. Reopen the app from Telegram.",
+    "invalid_token": "Your session has expired. Reopen the app.",
+    "cosmos_unavailable": "Service is temporarily unavailable. Try again."
+  }
+}

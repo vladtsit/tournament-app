@@ -1,12 +1,8 @@
 import { app } from '@azure/functions';
 
 // v4 programming model: register HTTP functions here (one import per endpoint).
-// Endpoints are added incrementally as per the requirements doc §8 / §22.
-//
-// Example:
-//   import './functions/config';
-//   import './functions/authTelegram';
-//   import './functions/telegramWebhook';
+import './functions/config.js';
+import './functions/authTelegram.js';
 
 // Health probe (kept lightweight; used by SWA + uptime checks).
 app.http('health', {
