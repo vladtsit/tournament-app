@@ -31,6 +31,34 @@
     "bad_signature": "No se pudo verificar la sesión de Telegram.",
     "expired": "La sesión de Telegram ha caducado. Vuelve a abrir la app desde Telegram.",
     "invalid_token": "Tu sesión ha caducado. Vuelve a abrir la app.",
-    "cosmos_unavailable": "El servicio no está disponible. Inténtalo de nuevo."
+    "cosmos_unavailable": "El servicio no está disponible. Inténtalo de nuevo.",
+    "not_admin": "Sólo los administradores del grupo pueden hacerlo.",
+    "not_a_member": "Ya no eres miembro de este grupo.",
+    "group_required": "Abre la app desde el mensaje fijado del grupo.",
+    "tournament_already_active": "Ya hay un torneo en curso.",
+    "tournament_not_found": "Torneo no encontrado.",
+    "registration_closed": "La inscripción está cerrada.",
+    "already_in_team": "Ya estás en un equipo.",
+    "partner_already_in_team": "Ese jugador ya está en un equipo.",
+    "partner_not_registered": "Ese jugador no está inscrito para jugar.",
+    "not_registered": "Primero marca que vas a jugar.",
+    "partner_is_self": "Elige a otra persona como compañero.",
+    "idempotency_conflict": "Petición conflictiva — inténtalo de nuevo."
+  },
+  "tournament": {
+    "none": "No hay ningún torneo abierto ahora mismo.",
+    "create": "Crear un nuevo torneo",
+    "counts": "Juegan: {{playing}} · BBQ: {{bbq}}"
+  },
+  "registration": {
+    "title": "Tu inscripción",
+    "playing": "Juego",
+    "bbq": "BBQ"
+  },
+  "teams": {
+    "title": "Equipo",
+    "you": "Tú",
+    "nooneLooking": "Aún nadie más busca compañero.",
+    "pair": "Emparejar"
   }
 }

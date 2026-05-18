@@ -44,4 +44,10 @@ export const containers_ = {
   groups: () => container("groups"),
   groupUsers: () => container("group_users"),
   audit: () => container("audit"),
+  tournaments: () => container("tournaments"),
+  registrations: () => container("registrations"),
+  teams: () => container("teams"),
+  teamInvites: () => container("team_invites"),
+  teamSlots: () => container("team_slots"),
+  idempotency: () => container("idempotency"),
 };

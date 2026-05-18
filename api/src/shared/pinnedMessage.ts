@@ -17,7 +17,10 @@ function launchUrl(groupShortId: string): string {
   return `https://t.me/${env.telegramBotUsername}/${env.miniAppShortName}?startapp=g_${groupShortId}`;
 }
 
-const TEMPLATES: Record<SupportedLanguage, (c: PinnedMessageContext) => string> = {
+const TEMPLATES: Record<
+  SupportedLanguage,
+  (c: PinnedMessageContext) => string
+> = {
   en: (c) =>
     [
       `🎾 *Sunday Pádel — ${escapeMd(c.groupTitle)}*`,

@@ -1,5 +1,9 @@
 import { containers_ } from "./cosmos.js";
-import { getChatMember, isAdminStatus, type ChatMember } from "./telegramApi.js";
+import {
+  getChatMember,
+  isAdminStatus,
+  type ChatMember,
+} from "./telegramApi.js";
 
 // Multi-source membership resolver. Per spec §10.5.
 // Source priority: group_users cache → live getChatMember fallback → record outcome.
@@ -85,6 +89,11 @@ export async function resolveMembership(
       source: "live",
     };
   } catch {
-    return { isMember: false, isAdmin: false, status: "unknown", source: "live" };
+    return {
+      isMember: false,
+      isAdmin: false,
+      status: "unknown",
+      source: "live",
+    };
   }
 }

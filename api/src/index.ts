@@ -5,6 +5,11 @@ import "./functions/config.js";
 import "./functions/authTelegram.js";
 import "./functions/telegramWebhook.js";
 import "./functions/groupsMine.js";
+import "./functions/tournamentCreate.js";
+import "./functions/tournamentCurrent.js";
+import "./functions/registrationUpsert.js";
+import "./functions/teamsLookingForTeammate.js";
+import "./functions/teamCreate.js";
 
 // Health probe (kept lightweight; used by SWA + uptime checks).
 app.http("health", {

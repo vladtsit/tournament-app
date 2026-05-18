@@ -6,6 +6,7 @@ import {
   type SupportedLanguage,
 } from "./i18n/resolveLocale";
 import { GroupPicker } from "./features/groups/GroupPicker";
+import { TournamentScreen } from "./features/tournament/TournamentScreen";
 
 export function App(): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -54,9 +55,14 @@ export function App(): JSX.Element {
           <>
             <p>{t("auth.welcome", { name: auth.user.firstName })}</p>
             {auth.group && (
-              <p style={{ fontSize: 13, opacity: 0.8 }}>
-                {t("groupPicker.activeGroup", { title: auth.group.title })}
-              </p>
+              <>
+                <p style={{ fontSize: 13, opacity: 0.8 }}>
+                  {t("groupPicker.activeGroup", { title: auth.group.title })}
+                </p>
+                <div style={{ marginTop: 16 }}>
+                  <TournamentScreen isAdmin={auth.group.isAdmin} />
+                </div>
+              </>
             )}
             {!auth.group && auth.groups.length === 0 && (
               <p style={{ fontSize: 13, opacity: 0.8 }}>

@@ -122,10 +122,7 @@ app.http("authTelegram", {
     let resolvedGroup: GroupDoc | undefined;
     if (requestedGroup) {
       // Verify membership (cache; fall back to live getChatMember).
-      const cached = await readCachedMembership(
-        requestedGroup.groupId,
-        userId,
-      );
+      const cached = await readCachedMembership(requestedGroup.groupId, userId);
       let isMember = cached
         ? cached.status !== "left" && cached.status !== "kicked"
         : false;

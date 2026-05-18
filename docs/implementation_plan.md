@@ -112,30 +112,40 @@ Goal: a group admin can add `@tournamentes_bot`, promote it, run `/setup`, and t
 
 ---
 
-## Phase 2 — Registration + teams
+## Phase 2 — Registration + teams ✅ (live)
 
-Goal: players can register yes/no, set BBQ yes/no, create teams via invite/accept, or appear on a "looking for teammate" list.
+Goal: players can register yes/no, set BBQ yes/no, and form teams via instant pairing from a "looking for teammate" list.
 
-**Steps**
+**Status: shipped** — all 10 Cosmos containers exist, endpoints deployed, SPA wired.
 
-1. **Containers**: `tournaments` (`/groupId`), `registrations` (`/groupId`), `teams` (`/groupId`), `team_invites` (`/groupId`), `team_slots` (`/userId`) — last one enforces "user in ≤1 active team per tournament".
-2. **Admin tournament create/start endpoints**: `POST /api/groups/{groupId}/tournaments` (admin), state machine `draft → registration_open`.
-3. **Registration** `POST /api/tournaments/{id}/registrations` (idempotent on `userId`): `{playing, bbq}`. Updates pinned message via debounced render.
-4. **Team endpoints**: `POST /api/tournaments/{id}/teams` (creator), `POST /api/team-invites/{id}/respond` (accept/decline using transactional batch on a single `/groupId` partition: mutate invite + team + `team_slots`). `GET /api/tournaments/{id}/looking-for-teammate`.
-5. **Idempotency** middleware (`shared/idempotency.ts`): `idem_{userId}_{key}` docs in `idempotency` container (`/userId`); body-hash mismatch ⇒ 422 `idempotency_conflict` (spec §22.5).
-6. **SPA features**: `features/registration/`, `features/teams/`; reuse Telegram `MainButton` per spec §11; haptics on primary actions.
+**Simplification vs original plan**: replaced the invite/accept multi-step team-formation flow with **instant pairing**. Caller picks a partner from `looking-for-teammate` and the team is formed atomically (two `team_slots` writes with rollback on conflict, since the `/userId` partition forbids a single transactional batch across both users). Rationale: simpler UX, no multi-step state machine, no `team_invites` doc lifecycle. The `team_invites` container still exists for future use.
+
+**Steps (as shipped)**
+
+1. **Containers** (all serverless in `cdb-free`/`padel`): `tournaments` (`/groupId`), `registrations` (`/groupId`), `teams` (`/groupId`), `team_invites` (`/groupId`, unused for now), `team_slots` (`/userId`), `idempotency` (`/userId`).
+2. **Admin tournament endpoints**: `POST /api/tournaments` (admin-only, creates a single active tournament per group with status `registration_open`), `GET /api/tournaments/current` (returns active tournament + caller's registration + team + counts).
+3. **Registration** `POST /api/tournaments/{id}/registrations` — body `{playing, bbq}`, requires `Idempotency-Key`, upserts `${tournamentId}_${userId}` doc with denormalized `firstName`. Pinned-message refresh deferred to Phase 3.
+4. **Team endpoints**: `POST /api/tournaments/{id}/teams` (body `{partnerUserId}`, requires `Idempotency-Key`, instant pairing as described above), `GET /api/tournaments/{id}/looking-for-teammate` (playing registrations without a `team_slots` entry; caller sorted first).
+5. **Idempotency** (`shared/idempotency.ts`): `idem_{userId}_{key}` docs; body-hash mismatch ⇒ 422 `idempotency_conflict` (spec §22.5).
+6. **Group context helpers** (`shared/requireGroup.ts`): `requireGroup` / `requireGroupAdmin` for per-group endpoints; uniform `mapGroupContextError`.
+7. **SPA**: `features/tournament/TournamentScreen.tsx` — one screen that shows the active tournament, the registration toggles (Playing / BBQ), the team card (when playing), or the "looking for teammate" picker (when playing and unpaired). Admin sees a "Start a new tournament" button when no tournament is active.
 
 **Relevant files**
 
-- `api/src/functions/{tournamentCurrent,registrationUpsert,teamCreate,teamInviteRespond,teamsAvailable}.ts`
-- `api/src/shared/idempotency.ts`
-- `app/src/features/{registration,teams}/`
+- `api/src/functions/{tournamentCreate,tournamentCurrent,registrationUpsert,teamCreate,teamsLookingForTeammate}.ts`
+- `api/src/shared/{idempotency,requireGroup}.ts`, extended `api/src/shared/cosmos.ts`
+- `app/src/features/tournament/TournamentScreen.tsx`, i18n keys `tournament.*`, `registration.*`, `teams.*` + new error codes in all three locales.
 
 **Verification**
 
 1. Cosmos: registering twice with same `Idempotency-Key` only mutates once; different body ⇒ 422.
-2. Same user cannot be in two active teams (transactional batch enforces `team_slots`).
-3. Pinned message in Telegram group updates after registrations but no more than once per `pinDebounceSeconds`.
+2. Same user cannot be in two active teams: second `team_slots.create()` of the same `${tournamentId}_${userId}` fails with 409 and the partial team is rolled back.
+3. `requireGroupAdmin` enforces tournament create; non-admins receive 403 `not_admin`.
+
+**Phase 3 follow-ups**
+
+- Pinned-message debounce refresh on registration count change (`pinDebounceSeconds`).
+- `team_invites` container is reserved should we want to re-introduce explicit consent for pairing later.
 
 ---
 

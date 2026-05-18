@@ -16,10 +16,7 @@ import {
   TelegramApiError,
   type ChatMember,
 } from "../shared/telegramApi.js";
-import {
-  upsertMembership,
-  type GroupUserDoc,
-} from "../shared/membership.js";
+import { upsertMembership, type GroupUserDoc } from "../shared/membership.js";
 import { renderPinnedMessage } from "../shared/pinnedMessage.js";
 import { resolveLanguage, t, type SupportedLanguage } from "../shared/i18n.js";
 
@@ -155,7 +152,10 @@ async function handleMessage(
   const m = text.match(/^\/setup(?:@(\S+))?\s*$/);
   if (!m) return; // Only /setup is supported in Phase 1.
   const targetBot = m[1];
-  if (targetBot && targetBot.toLowerCase() !== env.telegramBotUsername.toLowerCase()) {
+  if (
+    targetBot &&
+    targetBot.toLowerCase() !== env.telegramBotUsername.toLowerCase()
+  ) {
     return; // Not addressed to us.
   }
   await handleSetup(msg, ctx);
@@ -333,8 +333,7 @@ async function handleMyChatMember(
   doc.status = isKicked ? "inactive" : "active";
   doc.botRights = {
     canPinMessages:
-      !!upd.new_chat_member.can_pin_messages ||
-      newStatus === "creator",
+      !!upd.new_chat_member.can_pin_messages || newStatus === "creator",
     canPostMessages: !!upd.new_chat_member.can_post_messages,
   };
   doc.updatedAt = now;
