@@ -80,42 +80,35 @@ Goal: pushing to `main` deploys the SPA at `https://green-ground-018c96b03.7.azu
 
 ---
 
-## Phase 1 — Multi-tenant onboarding (bot webhook + /setup)
+## Phase 1 — Multi-tenant onboarding (bot webhook + /setup) ✅ (live; awaiting in-group test)
 
 Goal: a group admin can add `@tournamentes_bot`, promote it, run `/setup`, and the bot pins the Mini App launch message; subsequent member updates populate the membership cache.
 
-**Steps**
+**Status (live)**
 
-1. **Cosmos containers**: `groups` (`/groupId`), `group_users` (`/groupId`), `audit` (`/groupId`). Create via Azure CLI; document index policies (default fine).
-2. **Webhook** `functions/telegramWebhook.ts` — `POST /api/telegram/webhook`:
-   - Constant-time compare `X-Telegram-Bot-Api-Secret-Token` against `WEBHOOK_SECRET_TOKEN` **before** parsing body.
-   - Dispatch by update type: `message`, `my_chat_member`, `chat_member`, `chat_join_request`, `callback_query`.
-   - `/setup` handler: validate sender is Telegram chat admin (`shared/telegramApi.ts getChatMember`), create `groups/{groupId}` doc with 4-char `groupShortId` (collision-checked), insert first app admin, post + pin launch message via `pinChatMessage`. Debounce pin updates via `groups.settings.pinDebounceSeconds` (default 60).
-   - `my_chat_member` handler: update `groups.botRights`; mark `status='inactive'` on kick.
-   - `chat_member` handler: upsert `group_users/{groupId}_{userId}` with `status` + `updatedAt`.
-3. **`shared/telegramApi.ts`** — thin Bot API wrapper (`sendMessage`, `pinChatMessage`, `editMessageText`, `getChatMember`, `setMyCommands`).
-4. **`shared/membership.ts`** — multi-source resolver per spec §10.5: cache → `getChatMember` fallback → record outcome. Used by all per-group endpoints.
-5. **Endpoints**:
-   - `GET /api/groups/mine` — returns groups the JWT user belongs to (from `group_users`).
-   - `POST /api/auth/telegram` enhancement: read `start_param` (`g_<short>`), resolve `groupId`, embed in JWT claims if user is a member; else issue group-less token and 200 with `groups: [...]` so SPA shows picker.
-6. **SPA**:
-   - `features/groups/GroupPicker.tsx` shown when JWT has no `groupId` and `groups.length !== 1`.
-   - `apiClient` re-authenticates with chosen `groupId` to obtain group-scoped JWT.
-7. **Webhook registration script** (`scripts/set-webhook.sh`): `setWebhook` with `secret_token` and `allowed_updates=["message","my_chat_member","chat_member","chat_join_request","callback_query"]`. Document in README.
-8. **Pinned-message renderer** (`shared/pinnedMessage.ts`): renders the registration-phase template; called from `/setup`. Live-phase template added in Phase 3.
+- `POST /api/telegram/webhook` → 401 without correct secret header; processes valid updates.
+- `GET /api/groups/mine` → 401 without auth (requires bearer JWT).
+- Telegram webhook registered at `https://green-ground-018c96b03.7.azurestaticapps.net/api/telegram/webhook` with `allowed_updates=["message","my_chat_member","chat_member","chat_join_request","callback_query"]`. Confirmed via `getWebhookInfo`.
+- Cosmos containers `groups`, `group_users`, `audit` created (partition `/groupId`, serverless).
+- SPA shows a localized group picker when the user belongs to >1 active group.
 
-**Relevant files**
+**Shipped files**
 
-- `api/src/functions/{telegramWebhook,groupsMine}.ts`, `api/src/shared/{telegramApi,membership,pinnedMessage}.ts`, `api/src/shared/ids.ts` (groupShortId generator).
-- `app/src/features/groups/GroupPicker.tsx`, updates to `useTelegramAuth`.
-- `scripts/set-webhook.sh`, `README.md` — onboarding docs.
+- `api/src/shared/{ids,telegramApi,membership,pinnedMessage}.ts` + `i18n.ts` (added bot strings).
+- `api/src/functions/{telegramWebhook,groupsMine}.ts`; `authTelegram.ts` extended (start_param → groupId, returns `groups[]`).
+- `app/src/features/groups/GroupPicker.tsx`; `useTelegramAuth` reworked (status `picking_group`, `selectGroup` callback).
+- `scripts/set-webhook.sh` (idempotent register / `--info` / `--delete`).
 
-**Verification**
+**Manual test (next)**
 
-1. Local: simulate webhook with curl + correct secret header → 200; with wrong header → 401.
-2. Live: add bot to a test group, promote to admin, send `/setup` → pinned message appears, `groups` + first app-admin doc created in Cosmos.
-3. Open pinned link → SPA authenticates, lands on group-scoped home (no picker since single group).
-4. Add bot to a second group, repeat `/setup` → opening `t.me/.../app` (no `startapp`) renders the picker with both groups.
+1. Add `@tournamentes_bot` to a Telegram group and promote it with **Pin messages** right.
+2. Send `/setup` as an admin → expect:
+   - Bot replies with localized confirmation.
+   - A "Sunday Pádel" message gets posted and pinned with the `t.me/tournamentes_bot/app?startapp=g_<short>` link.
+   - Cosmos `groups/{chatId}` doc exists with a 4-char `groupShortId`.
+   - `group_users/{chatId}_{adminUserId}` exists with `isAdmin: true`.
+3. Open the pinned link → SPA authenticates and lands directly on the (otherwise empty) home screen.
+4. Add the bot to a second group, repeat → opening the Mini App without `startapp` shows the picker with both groups.
 
 ---
 
