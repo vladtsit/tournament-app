@@ -93,7 +93,8 @@ export function HistoryScreen(): JSX.Element {
             <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14 }}>
               {item.podium.map((p) => (
                 <li key={p.teamId}>
-                  {medalFor(p.rank)} {p.players.map((u) => u.displayName).join(" + ")}
+                  {medalFor(p.rank)}{" "}
+                  {p.players.map((u) => u.displayName).join(" + ")}
                   <span style={{ opacity: 0.7, marginLeft: 8, fontSize: 12 }}>
                     {p.wins}W–{p.losses}L
                   </span>

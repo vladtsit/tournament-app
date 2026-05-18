@@ -31,6 +31,7 @@
     "bad_signature": "No se pudo verificar la sesión de Telegram.",
     "expired": "La sesión de Telegram ha caducado. Vuelve a abrir la app desde Telegram.",
     "invalid_token": "Tu sesión ha caducado. Vuelve a abrir la app.",
+    "rate_limited": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
     "cosmos_unavailable": "El servicio no está disponible. Inténtalo de nuevo.",
     "not_admin": "Sólo los administradores del grupo pueden hacerlo.",
     "not_a_member": "Ya no eres miembro de este grupo.",

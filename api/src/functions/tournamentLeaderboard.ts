@@ -61,10 +61,7 @@ app.http("tournamentLeaderboard", {
         }>;
       }>()
       .catch(() => null);
-    if (
-      tRead?.resource?.status === "ended" &&
-      tRead.resource.finalStandings
-    ) {
+    if (tRead?.resource?.status === "ended" && tRead.resource.finalStandings) {
       const teamsQ = await containers_
         .teams()
         .items.query<TeamDoc>(

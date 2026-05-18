@@ -1,9 +1,6 @@
 import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { containers_ } from "../shared/cosmos.js";
-import {
-  requireGroup,
-  mapGroupContextError,
-} from "../shared/requireGroup.js";
+import { requireGroup, mapGroupContextError } from "../shared/requireGroup.js";
 
 // GET /api/tournaments/history?limit=20
 // Lists past (ended) tournaments for the caller's group, newest first.

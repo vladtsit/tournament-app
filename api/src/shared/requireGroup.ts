@@ -6,10 +6,12 @@ import { containers_ } from "./cosmos.js";
 // has a selected group, and (optionally) is an app admin of that group.
 
 export class GroupContextError extends Error {
+  public retryAfterSec?: number;
   constructor(
     public readonly code:
       | "missing_token"
       | "invalid_token"
+      | "rate_limited"
       | "group_required"
       | "not_a_member"
       | "not_admin"
@@ -34,7 +36,11 @@ export async function requireGroup(req: HttpRequest): Promise<GroupContext> {
     auth = await requireAuth(req);
   } catch (err) {
     if (err instanceof AuthError) {
-      throw new GroupContextError(err.code);
+      const e = new GroupContextError(err.code);
+      if (err.code === "rate_limited" && err.retryAfterSec !== undefined) {
+        e.retryAfterSec = err.retryAfterSec;
+      }
+      throw e;
     }
     throw err;
   }
@@ -62,12 +68,22 @@ export async function requireGroupAdmin(
 export function mapGroupContextError(err: unknown): {
   status: number;
   code: string;
+  retryAfterSec?: number;
 } {
   if (err instanceof GroupContextError) {
     switch (err.code) {
       case "missing_token":
       case "invalid_token":
         return { status: 401, code: err.code };
+      case "rate_limited": {
+        const out: { status: number; code: string; retryAfterSec?: number } = {
+          status: 429,
+          code: err.code,
+        };
+        if (err.retryAfterSec !== undefined)
+          out.retryAfterSec = err.retryAfterSec;
+        return out;
+      }
       case "not_admin":
       case "not_a_member":
         return { status: 403, code: err.code };

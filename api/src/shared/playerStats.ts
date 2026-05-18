@@ -1,8 +1,5 @@
 import { containers_ } from "./cosmos.js";
-import type {
-  FinalStanding,
-  PlayerPointsDelta,
-} from "./scoring.js";
+import type { FinalStanding, PlayerPointsDelta } from "./scoring.js";
 
 // player_stats — overall (cross-tournament) per-player score.
 // Partition key: /groupId. Id: ps_{userId}. Per spec §18.6.

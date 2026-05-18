@@ -31,6 +31,7 @@
     "bad_signature": "Telegram session could not be verified.",
     "expired": "Telegram session expired. Reopen the app from Telegram.",
     "invalid_token": "Your session has expired. Reopen the app.",
+    "rate_limited": "Too many requests. Slow down and try again.",
     "cosmos_unavailable": "Service is temporarily unavailable. Try again.",
     "not_admin": "Only group admins can do that.",
     "not_a_member": "You are not a member of this group anymore.",

@@ -1,13 +1,7 @@
 import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { containers_ } from "../shared/cosmos.js";
-import {
-  requireGroup,
-  mapGroupContextError,
-} from "../shared/requireGroup.js";
-import {
-  sortOverall,
-  type PlayerStatsDoc,
-} from "../shared/playerStats.js";
+import { requireGroup, mapGroupContextError } from "../shared/requireGroup.js";
+import { sortOverall, type PlayerStatsDoc } from "../shared/playerStats.js";
 
 // GET /api/groups/overall-score?limit=50
 // Cross-tournament leaderboard for the caller's group. Spec §18.6.

@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTelegramAuth } from "./hooks/useTelegramAuth";
+import { useBackButton } from "./hooks/useBackButton";
+import { haptic, storage } from "./telegram";
 import { setLanguage } from "./i18n";
 import {
   SUPPORTED_LANGUAGES,
@@ -81,9 +83,36 @@ export function App(): JSX.Element {
 
 type Tab = "current" | "history" | "overall";
 
+const TAB_STORAGE_KEY = "lastTab";
+const TABS: readonly Tab[] = ["current", "history", "overall"] as const;
+
 function TabbedView({ isAdmin }: { isAdmin: boolean }): JSX.Element {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("current");
+
+  // Restore last-used tab from CloudStorage (falls back to localStorage).
+  useEffect(() => {
+    let cancelled = false;
+    void storage.get(TAB_STORAGE_KEY).then((v) => {
+      if (cancelled) return;
+      if (v && (TABS as readonly string[]).includes(v)) {
+        setTab(v as Tab);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectTab = useCallback((id: Tab) => {
+    haptic.selection();
+    setTab(id);
+    void storage.set(TAB_STORAGE_KEY, id);
+  }, []);
+
+  const goCurrent = useCallback(() => selectTab("current"), [selectTab]);
+  useBackButton(tab !== "current", goCurrent);
+
   return (
     <div>
       <nav
@@ -95,11 +124,11 @@ function TabbedView({ isAdmin }: { isAdmin: boolean }): JSX.Element {
             "1px solid var(--tg-theme-section-separator-color, #e5e5e5)",
         }}
       >
-        {(["current", "history", "overall"] as const).map((id) => (
+        {TABS.map((id) => (
           <button
             key={id}
             type="button"
-            onClick={() => setTab(id)}
+            onClick={() => selectTab(id)}
             style={{
               padding: "8px 12px",
               border: "none",

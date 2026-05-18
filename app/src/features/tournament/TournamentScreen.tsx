@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiClientError } from "../../apiClient";
+import { haptic } from "../../telegram";
 
 interface PlayerSummary {
   userId: string;
@@ -86,8 +87,10 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
         body: name ? { name } : {},
       });
       setDraftName("");
+      haptic.notify("success");
       await reload();
     } catch (err) {
+      haptic.notify("error");
       setError(err instanceof ApiClientError ? err.code : "unknown");
     } finally {
       setBusy(false);
@@ -105,8 +108,10 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
           body: { playing, bbq },
           idempotencyKey: `reg-${data.tournament.id}-${Date.now()}`,
         });
+        haptic.selection();
         await reload();
       } catch (err) {
+        haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
       } finally {
         setBusy(false);
@@ -124,8 +129,10 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
         method: "POST",
         body: {},
       });
+      haptic.notify("success");
       await reload();
     } catch (err) {
+      haptic.notify("error");
       setError(err instanceof ApiClientError ? err.code : "unknown");
     } finally {
       setBusy(false);
@@ -147,8 +154,10 @@ export function TournamentScreen({ isAdmin }: Props): JSX.Element {
         method: "POST",
         body: {},
       });
+      haptic.notify("success");
       await reload();
     } catch (err) {
+      haptic.notify("error");
       setError(err instanceof ApiClientError ? err.code : "unknown");
     } finally {
       setBusy(false);
@@ -332,8 +341,10 @@ function TeamSection({
           body: { partnerUserId },
           idempotencyKey: `team-${tournamentId}-${partnerUserId}-${Date.now()}`,
         });
+        haptic.notify("success");
         await onChange();
       } catch (err) {
+        haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
       } finally {
         setBusy(false);
@@ -546,8 +557,10 @@ function LiveSection({
       setS3a("");
       setS3b("");
       setOpponentId("");
+      haptic.notify("success");
       await reload();
     } catch (err) {
+      haptic.notify("error");
       setError(err instanceof ApiClientError ? err.code : "unknown");
     } finally {
       setBusy(false);
@@ -563,8 +576,10 @@ function LiveSection({
           method: "POST",
           body: {},
         });
+        haptic.notify("success");
         await reload();
       } catch (err) {
+        haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
       } finally {
         setBusy(false);
@@ -582,8 +597,10 @@ function LiveSection({
           method: "POST",
           body: {},
         });
+        haptic.notify("warning");
         await reload();
       } catch (err) {
+        haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
       } finally {
         setBusy(false);

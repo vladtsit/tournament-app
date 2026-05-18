@@ -1,5 +1,6 @@
 import type { HttpRequest } from "@azure/functions";
 import { verifySession, type SessionClaims } from "./session.js";
+import { enforceRateLimit, isMutating, RateLimitError } from "./rateLimit.js";
 
 export interface AuthContext {
   userId: string;
@@ -9,7 +10,10 @@ export interface AuthContext {
 }
 
 export class AuthError extends Error {
-  constructor(public readonly code: "missing_token" | "invalid_token") {
+  public retryAfterSec?: number;
+  constructor(
+    public readonly code: "missing_token" | "invalid_token" | "rate_limited",
+  ) {
     super(code);
     this.name = "AuthError";
   }
@@ -43,5 +47,19 @@ export async function requireAuth(req: HttpRequest): Promise<AuthContext> {
     claims,
   };
   if (claims.gid) ctx.groupId = claims.gid;
+
+  if (isMutating(req.method)) {
+    try {
+      enforceRateLimit(`u_${ctx.userId}`);
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        const e = new AuthError("rate_limited");
+        e.retryAfterSec = err.retryAfterSec;
+        throw e;
+      }
+      throw err;
+    }
+  }
+
   return ctx;
 }

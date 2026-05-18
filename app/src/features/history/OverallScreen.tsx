@@ -56,13 +56,17 @@ export function OverallScreen(): JSX.Element {
   }
   return (
     <section style={cardStyle}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <table
+        style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+      >
         <thead>
           <tr style={{ textAlign: "left" }}>
             <th>#</th>
             <th>{t("overall.col.player")}</th>
             <th style={{ textAlign: "right" }}>{t("overall.col.score")}</th>
-            <th style={{ textAlign: "right" }}>{t("overall.col.tournaments")}</th>
+            <th style={{ textAlign: "right" }}>
+              {t("overall.col.tournaments")}
+            </th>
             <th style={{ textAlign: "right" }}>{t("overall.col.wins")}</th>
             <th style={{ textAlign: "right" }}>🥇/🥈/🥉</th>
           </tr>
