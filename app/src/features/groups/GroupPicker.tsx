@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronRight, Shield, Users } from "lucide-react";
 import type { AuthGroup } from "../../hooks/useTelegramAuth";
+import {
+  Badge,
+  Card,
+  Inline,
+  ListRow,
+  SectionTitle,
+  Stack,
+} from "../../ui";
 
 interface Props {
   groups: AuthGroup[];
@@ -12,18 +21,25 @@ export function GroupPicker({ groups, onSelect }: Props): JSX.Element {
   const [busy, setBusy] = useState<string | null>(null);
 
   return (
-    <section style={{ marginTop: 16 }}>
-      <h2 style={{ fontSize: 16, margin: "8px 0" }}>
-        {t("groupPicker.title")}
-      </h2>
-      <p style={{ fontSize: 13, opacity: 0.8, margin: "0 0 12px" }}>
-        {t("groupPicker.subtitle")}
-      </p>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {groups.map((g) => (
-          <li key={g.groupId} style={{ marginBottom: 8 }}>
-            <button
-              type="button"
+    <Card>
+      <Stack gap="md">
+        <Stack gap="xs">
+          <SectionTitle>{t("groupPicker.title")}</SectionTitle>
+          <p
+            style={{
+              fontSize: "var(--font-sm)",
+              color: "var(--text-muted)",
+            }}
+          >
+            {t("groupPicker.subtitle")}
+          </p>
+        </Stack>
+        <Stack gap="xs">
+          {groups.map((g) => (
+            <ListRow
+              key={g.groupId}
+              interactive
+              bordered
               disabled={busy !== null}
               onClick={async () => {
                 setBusy(g.groupId);
@@ -33,31 +49,42 @@ export function GroupPicker({ groups, onSelect }: Props): JSX.Element {
                   setBusy(null);
                 }
               }}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "12px 14px",
-                borderRadius: 10,
-                border: "1px solid var(--tg-theme-hint-color, #ccc)",
-                background:
-                  busy === g.groupId
-                    ? "var(--tg-theme-secondary-bg-color, #eee)"
-                    : "var(--tg-theme-bg-color, transparent)",
-                color: "inherit",
-                fontSize: 15,
-                cursor: busy ? "wait" : "pointer",
-              }}
-            >
-              <strong>{g.title}</strong>
-              {g.isAdmin && (
-                <span style={{ fontSize: 11, marginLeft: 8, opacity: 0.7 }}>
-                  · {t("groupPicker.admin")}
+              leading={
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 36,
+                    height: 36,
+                    borderRadius: "var(--radius-pill)",
+                    background:
+                      "color-mix(in srgb, var(--accent) 12%, transparent)",
+                    color: "var(--accent)",
+                  }}
+                >
+                  <Users size={18} />
                 </span>
-              )}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
+              }
+              primary={
+                <Inline gap="sm" align="center" wrap>
+                  <span>{g.title}</span>
+                  {g.isAdmin ? (
+                    <Badge variant="info" size="sm">
+                      <Inline gap="xs" align="center">
+                        <Shield size={11} />
+                        {t("groupPicker.admin")}
+                      </Inline>
+                    </Badge>
+                  ) : null}
+                </Inline>
+              }
+              trailing={<ChevronRight size={18} color="var(--text-muted)" />}
+            />
+          ))}
+        </Stack>
+      </Stack>
+    </Card>
   );
 }

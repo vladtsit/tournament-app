@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useState } from "react";
+import { BarChart3, HelpCircle, History, Trophy } from "lucide-react";
 import { useTelegramAuth } from "./hooks/useTelegramAuth";
 import { useBackButton } from "./hooks/useBackButton";
 import { haptic, storage } from "./telegram";
@@ -13,107 +14,132 @@ import { TournamentScreen } from "./features/tournament/TournamentScreen";
 import { HistoryScreen } from "./features/history/HistoryScreen";
 import { OverallScreen } from "./features/history/OverallScreen";
 import { HelpScreen } from "./features/help/HelpScreen";
+import {
+  Avatar,
+  IconButton,
+  LanguagePicker,
+  Spinner,
+  Stack,
+} from "./ui";
+import styles from "./App.module.css";
 
 export function App(): JSX.Element {
   const { t, i18n } = useTranslation();
   const auth = useTelegramAuth();
   const [showHelp, setShowHelp] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = (): void => setScrolled(window.scrollY > 4);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const languageOptions = SUPPORTED_LANGUAGES.map((lng) => ({
+    value: lng,
+    label: t(
+      `common.${
+        lng === "en" ? "english" : lng === "es" ? "spanish" : "russian"
+      }`,
+    ),
+  }));
 
   return (
-    <main
-      style={{
-        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-        padding: 16,
-        maxWidth: 480,
-        margin: "0 auto",
-        color: "var(--tg-theme-text-color, inherit)",
-        background: "var(--tg-theme-bg-color, transparent)",
-        minHeight: "100vh",
-      }}
-    >
+    <main className={styles["shell"]}>
       <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
+        className={[
+          styles["header"],
+          scrolled ? styles["headerScrolled"] : null,
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
-        <h1 style={{ fontSize: 20, margin: 0 }}>{t("app.title")}</h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            type="button"
+        <h1 className={styles["title"]}>{t("app.title")}</h1>
+        <div className={styles["headerActions"]}>
+          <LanguagePicker
+            current={i18n.language as SupportedLanguage}
+            options={languageOptions}
+            label={t("common.language")}
+            onSelect={(lng) => {
+              haptic.selection();
+              void setLanguage(lng);
+            }}
+          />
+          <IconButton
+            icon={<HelpCircle size={20} />}
+            aria-label={t("help.title")}
+            size="sm"
+            variant="flat"
             onClick={() => {
               haptic.selection();
-              setShowHelp((v) => !v);
+              setShowHelp(true);
             }}
-            aria-label={t("help.title")}
-            title={t("help.title")}
-            style={{
-              border: "1px solid var(--tg-theme-section-separator-color, #ccc)",
-              background: "transparent",
-              color: "inherit",
-              borderRadius: 999,
-              width: 28,
-              height: 28,
-              cursor: "pointer",
-              fontSize: 14,
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-          >
-            ?
-          </button>
-          <LanguagePicker current={i18n.language as SupportedLanguage} />
+          />
         </div>
       </header>
 
-      {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
+      <HelpScreen open={showHelp} onClose={() => setShowHelp(false)} />
 
-      <section
-        style={{ marginTop: 24, display: showHelp ? "none" : undefined }}
-      >
-        {auth.status === "idle" && <p>…</p>}
-        {auth.status === "authenticating" && <p>{t("app.authenticating")}</p>}
-        {auth.status === "not_in_telegram" && (
-          <p>{t("app.openFromTelegram")}</p>
-        )}
-        {auth.status === "error" && (
-          <p>
-            {t(`errors.${auth.errorCode ?? "errorGeneric"}` as const, {
-              defaultValue: t("app.errorGeneric"),
-            })}
-          </p>
-        )}
-        {auth.status === "picking_group" && (
+      <div className={styles["content"]}>
+        {auth.status === "idle" || auth.status === "authenticating" ? (
+          <div className={styles["statusCenter"]}>
+            <Spinner size={28} label={t("app.authenticating")} />
+            <span>{t("app.authenticating")}</span>
+          </div>
+        ) : null}
+
+        {auth.status === "not_in_telegram" ? (
+          <div className={styles["statusCenter"]}>
+            <span>{t("app.openFromTelegram")}</span>
+          </div>
+        ) : null}
+
+        {auth.status === "error" ? (
+          <div className={styles["statusCenter"]}>
+            <span style={{ color: "var(--danger)" }}>
+              {t(`errors.${auth.errorCode ?? "errorGeneric"}` as const, {
+                defaultValue: t("app.errorGeneric"),
+              })}
+            </span>
+          </div>
+        ) : null}
+
+        {auth.status === "picking_group" ? (
           <GroupPicker groups={auth.groups} onSelect={auth.selectGroup} />
-        )}
-        {auth.status === "authenticated" && auth.user && (
-          <>
-            <p>{t("auth.welcome", { name: auth.user.firstName })}</p>
-            {auth.group && (
-              <>
-                <p style={{ fontSize: 13, opacity: 0.8 }}>
-                  {t("groupPicker.activeGroup", { title: auth.group.title })}
-                </p>
-                <div style={{ marginTop: 16 }}>
-                  <TabbedView
-                    isAdmin={auth.group.isAdmin}
-                    groupId={auth.group.groupId}
-                  />
-                </div>
-              </>
-            )}
-            {!auth.group && auth.groups.length === 0 && (
-              <p style={{ fontSize: 13, opacity: 0.8 }}>
-                {t("groupPicker.noGroups")}
-              </p>
-            )}
-          </>
-        )}
-      </section>
+        ) : null}
+
+        {auth.status === "authenticated" && auth.user ? (
+          <Stack gap="md">
+            <div className={styles["welcome"]}>
+              <Avatar
+                id={auth.user.id}
+                name={`${auth.user.firstName} ${auth.user.lastName ?? ""}`.trim()}
+                size={40}
+              />
+              <div className={styles["welcomeText"]}>
+                <span className={styles["welcomeName"]}>
+                  {t("auth.welcome", { name: auth.user.firstName })}
+                </span>
+                {auth.group ? (
+                  <span className={styles["welcomeGroup"]}>
+                    {t("groupPicker.activeGroup", { title: auth.group.title })}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            {auth.group ? (
+              <TabbedView
+                isAdmin={auth.group.isAdmin}
+                groupId={auth.group.groupId}
+              />
+            ) : auth.groups.length === 0 ? (
+              <div className={styles["statusCenter"]}>
+                <span>{t("groupPicker.noGroups")}</span>
+              </div>
+            ) : null}
+          </Stack>
+        ) : null}
+      </div>
     </main>
   );
 }
@@ -122,6 +148,12 @@ type Tab = "current" | "history" | "overall";
 
 const TAB_STORAGE_KEY = "lastTab";
 const TABS: readonly Tab[] = ["current", "history", "overall"] as const;
+
+const TAB_ICON: Record<Tab, JSX.Element> = {
+  current: <Trophy size={20} />,
+  history: <History size={20} />,
+  overall: <BarChart3 size={20} />,
+};
 
 function TabbedView({
   isAdmin,
@@ -133,7 +165,6 @@ function TabbedView({
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("current");
 
-  // Restore last-used tab from CloudStorage (falls back to localStorage).
   useEffect(() => {
     let cancelled = false;
     void storage.get(TAB_STORAGE_KEY).then((v) => {
@@ -158,73 +189,31 @@ function TabbedView({
 
   return (
     <div>
-      <nav
-        style={{
-          display: "flex",
-          gap: 4,
-          marginBottom: 12,
-          borderBottom:
-            "1px solid var(--tg-theme-section-separator-color, #e5e5e5)",
-        }}
-      >
+      <nav className={styles["tabs"]} role="tablist">
         {TABS.map((id) => (
           <button
             key={id}
             type="button"
+            role="tab"
+            aria-selected={tab === id}
             onClick={() => selectTab(id)}
-            style={{
-              padding: "8px 12px",
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              fontSize: 14,
-              fontWeight: tab === id ? 600 : 400,
-              borderBottom:
-                tab === id
-                  ? "2px solid var(--tg-theme-button-color, #2ea6ff)"
-                  : "2px solid transparent",
-              color: "inherit",
-            }}
+            className={[
+              styles["tab"],
+              tab === id ? styles["tabActive"] : null,
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
-            {t(`tabs.${id}`)}
+            {TAB_ICON[id]}
+            <span>{t(`tabs.${id}`)}</span>
           </button>
         ))}
       </nav>
-      {tab === "current" && (
+      {tab === "current" ? (
         <TournamentScreen isAdmin={isAdmin} groupId={groupId} />
-      )}
-      {tab === "history" && <HistoryScreen />}
-      {tab === "overall" && <OverallScreen />}
+      ) : null}
+      {tab === "history" ? <HistoryScreen /> : null}
+      {tab === "overall" ? <OverallScreen /> : null}
     </div>
-  );
-}
-
-function LanguagePicker({
-  current,
-}: {
-  current: SupportedLanguage;
-}): JSX.Element {
-  const { t } = useTranslation();
-  const labels: Record<SupportedLanguage, string> = {
-    en: t("common.english"),
-    es: t("common.spanish"),
-    ru: t("common.russian"),
-  };
-  return (
-    <label style={{ fontSize: 12, opacity: 0.8 }}>
-      <span style={{ marginRight: 4 }}>{t("common.language")}:</span>
-      <select
-        value={current}
-        onChange={(e) => {
-          void setLanguage(e.target.value as SupportedLanguage);
-        }}
-      >
-        {SUPPORTED_LANGUAGES.map((lng) => (
-          <option key={lng} value={lng}>
-            {labels[lng]}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

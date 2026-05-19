@@ -1,0 +1,71 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.sm {
+  padding: 3px 8px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.md {
+  padding: 4px 10px;
+  font-size: var(--font-xs);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Variants — soft background + bold foreground */
+.info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.warning {
+  background: var(--warning-soft);
+  color: color-mix(in srgb, var(--warning) 70%, black);
+}
+
+.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.neutral {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.gold {
+  background: color-mix(in srgb, var(--podium-gold) 18%, transparent);
+  color: color-mix(in srgb, var(--podium-gold) 70%, black);
+}
+
+.silver {
+  background: color-mix(in srgb, var(--podium-silver) 22%, transparent);
+  color: color-mix(in srgb, var(--podium-silver) 60%, black);
+}
+
+.bronze {
+  background: color-mix(in srgb, var(--podium-bronze) 18%, transparent);
+  color: color-mix(in srgb, var(--podium-bronze) 80%, black);
+}

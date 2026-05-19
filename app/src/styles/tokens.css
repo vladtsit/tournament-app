@@ -1,0 +1,182 @@
+/* =========================================================================
+ * Design tokens — the visual language of the app.
+ *
+ * Tokens default to Telegram theme variables so the app always inherits the
+ * user's chosen Telegram color scheme. A small padel-themed accent palette is
+ * layered on top for status badges, podium tints, and decorative highlights.
+ *
+ * Primitives in app/src/ui/ should consume these tokens (never raw hex).
+ * ========================================================================= */
+
+:root {
+  /* ── Surfaces & text (TG-driven) ───────────────────────────────────────── */
+  --surface: var(--tg-theme-bg-color, #ffffff);
+  --surface-2: var(--tg-theme-secondary-bg-color, #f1f3f5);
+  --surface-elevated: var(--tg-theme-bg-color, #ffffff);
+  --text: var(--tg-theme-text-color, #0f172a);
+  --text-muted: var(--tg-theme-hint-color, #64748b);
+  --text-on-accent: var(--tg-theme-button-text-color, #ffffff);
+  --border: var(--tg-theme-section-separator-color, #e5e7eb);
+  --border-strong: var(--tg-theme-hint-color, #cbd5e1);
+  --link: var(--tg-theme-link-color, #2563eb);
+
+  /* ── Accent (TG button color, sane fallback) ───────────────────────────── */
+  --accent: var(--tg-theme-button-color, #2ea6ff);
+  --accent-hover: color-mix(in srgb, var(--accent) 88%, black);
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --focus-ring: color-mix(in srgb, var(--accent) 45%, transparent);
+
+  /* ── Padel palette (always custom — used for non-chrome accents) ───────── */
+  --padel-green: #16a34a;
+  --padel-green-soft: color-mix(in srgb, var(--padel-green) 14%, transparent);
+  --padel-yellow: #facc15;
+  --padel-yellow-soft: color-mix(in srgb, var(--padel-yellow) 22%, transparent);
+  --padel-clay: #ea580c;
+  --padel-clay-soft: color-mix(in srgb, var(--padel-clay) 14%, transparent);
+
+  /* ── Podium ────────────────────────────────────────────────────────────── */
+  --podium-gold: #eab308;
+  --podium-silver: #94a3b8;
+  --podium-bronze: #b45309;
+
+  /* ── Semantic ─────────────────────────────────────────────────────────── */
+  --success: var(--padel-green);
+  --success-soft: var(--padel-green-soft);
+  --warning: var(--padel-yellow);
+  --warning-soft: var(--padel-yellow-soft);
+  --danger: var(--tg-theme-destructive-text-color, #ef4444);
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+  --info: var(--accent);
+  --info-soft: var(--accent-soft);
+
+  /* ── Spacing scale (4 px base) ────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  --font-xs: 12px;
+  --font-sm: 14px;
+  --font-md: 16px;
+  --font-lg: 18px;
+  --font-xl: 22px;
+  --font-2xl: 28px;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ── Shadows ──────────────────────────────────────────────────────────── */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04),
+    0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-elevated: 0 4px 12px rgba(15, 23, 42, 0.08),
+    0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-sticky: 0 2px 8px rgba(15, 23, 42, 0.06);
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+
+  /* ── Layout ───────────────────────────────────────────────────────────── */
+  --tap-min: 44px;
+  --app-max-width: 520px;
+}
+
+/* Dark-mode tweaks: stronger shadows, softer borders. TG vars already flip
+   surface/text colors automatically. */
+[data-tg-color-scheme="dark"] {
+  --border: color-mix(in srgb, var(--tg-theme-hint-color, #64748b) 30%, transparent);
+  --border-strong: color-mix(in srgb, var(--tg-theme-hint-color, #94a3b8) 50%, transparent);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-sticky: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* =========================================================================
+ * Global reset & base
+ * ========================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-family);
+  font-size: var(--font-md);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Accessible focus ring — only when navigating via keyboard. */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Respect users' motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

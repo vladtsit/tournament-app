@@ -1,8 +1,24 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Edit3,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { api, ApiClientError } from "../../apiClient";
 import { haptic } from "../../telegram";
-import { useBackButton } from "../../hooks/useBackButton";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Inline,
+  Modal,
+  Spinner,
+  Stack,
+} from "../../ui";
 
 interface PlayerSummary {
   userId: string;
@@ -41,14 +57,12 @@ function fullName(p: { firstName: string; lastName?: string }): string {
 }
 
 export function DisputesScreen({ tournamentId, onClose }: Props): JSX.Element {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useBackButton(true, onClose);
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -166,127 +180,146 @@ export function DisputesScreen({ tournamentId, onClose }: Props): JSX.Element {
     [reload, t],
   );
 
+  const dateFmt = new Intl.DateTimeFormat(i18n.language, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
   return (
-    <section
-      style={{
-        background: "var(--tg-theme-secondary-bg-color, #fafafa)",
-        borderRadius: 12,
-        padding: 16,
-        marginTop: 12,
-      }}
+    <Modal
+      open
+      onClose={onClose}
+      title={t("admin.disputesTitle")}
+      trailing={
+        matches.length > 0 ? (
+          <Badge variant="danger" size="sm">
+            {matches.length}
+          </Badge>
+        ) : null
+      }
     >
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>{t("admin.disputesTitle")}</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            fontSize: 16,
-            color: "var(--tg-theme-link-color, #2ea6ff)",
-          }}
-        >
-          {t("common.close")}
-        </button>
-      </header>
+      <Stack gap="md">
+        {loading ? (
+          <Inline justify="center" style={{ padding: "var(--space-4)" }}>
+            <Spinner size={28} />
+          </Inline>
+        ) : matches.length === 0 ? (
+          <EmptyState
+            icon={<ShieldCheck size={32} />}
+            title={t("admin.noDisputes")}
+          />
+        ) : (
+          <Stack gap="sm">
+            {matches.map((m) => {
+              const scoreStr = m.sets
+                .map((s) => `${s.a}-${s.b}`)
+                .join("  ·  ");
+              return (
+                <Card key={m.id} variant="flat">
+                  <Stack gap="sm">
+                    <Inline gap="sm" justify="space-between" align="flex-start">
+                      <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: "var(--font-md)",
+                            fontWeight: "var(--weight-semibold)",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {labelFor(m.teamAId)}
+                          <span
+                            style={{
+                              color: "var(--text-muted)",
+                              fontWeight: "var(--weight-normal)",
+                              margin: "0 var(--space-2)",
+                            }}
+                          >
+                            vs
+                          </span>
+                          {labelFor(m.teamBId)}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "var(--font-sm)",
+                            fontVariantNumeric: "tabular-nums",
+                            color: "var(--text)",
+                          }}
+                        >
+                          {scoreStr}
+                        </div>
+                      </Stack>
+                      <Badge variant="warning" size="sm" dot>
+                        {t("tournament.status.disputed", {
+                          defaultValue: "Disputed",
+                        })}
+                      </Badge>
+                    </Inline>
 
-      {loading ? (
-        <p>…</p>
-      ) : matches.length === 0 ? (
-        <p style={{ opacity: 0.7 }}>{t("admin.noDisputes")}</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {matches.map((m) => (
-            <li
-              key={m.id}
-              style={{
-                padding: "10px 0",
-                borderBottom:
-                  "1px solid var(--tg-theme-section-separator-color, #eee)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              <div style={{ fontSize: 14 }}>
-                <strong>{labelFor(m.teamAId)}</strong> vs{" "}
-                <strong>{labelFor(m.teamBId)}</strong>
-                {" — "}
-                {m.sets.map((s) => `${s.a}-${s.b}`).join(", ")}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>
-                {new Date(m.submittedAt).toLocaleString()} ·{" "}
-                {t("admin.submittedBy", {
-                  name: m.submittedByUserId.slice(0, 8),
-                })}
-              </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={() => void resolve(m.id)}
-                  disabled={busy}
-                  style={btnSmall}
-                >
-                  {t("admin.resolveConfirm")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void editMatch(m)}
-                  disabled={busy}
-                  style={btnSmall}
-                >
-                  {t("admin.edit")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void deleteMatch(m)}
-                  disabled={busy}
-                  style={btnSmallDanger}
-                >
-                  {t("admin.delete")}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                    <div
+                      style={{
+                        fontSize: "var(--font-xs)",
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      {dateFmt.format(new Date(m.submittedAt))}
+                      {" · "}
+                      {t("admin.submittedBy", {
+                        name: m.submittedByUserId.slice(0, 8),
+                      })}
+                    </div>
 
-      {error && (
-        <p
-          style={{
-            color: "var(--tg-theme-destructive-text-color, #c00)",
-            fontSize: 13,
-            marginTop: 8,
-          }}
-        >
-          {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
-        </p>
-      )}
-    </section>
+                    <Inline gap="xs" wrap>
+                      <Button
+                        size="sm"
+                        variant="success"
+                        leftIcon={<CheckCircle2 size={16} />}
+                        onClick={() => void resolve(m.id)}
+                        disabled={busy}
+                      >
+                        {t("admin.resolveConfirm")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        leftIcon={<Edit3 size={16} />}
+                        onClick={() => void editMatch(m)}
+                        disabled={busy}
+                      >
+                        {t("admin.edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        leftIcon={<Trash2 size={16} />}
+                        onClick={() => void deleteMatch(m)}
+                        disabled={busy}
+                      >
+                        {t("admin.delete")}
+                      </Button>
+                    </Inline>
+                  </Stack>
+                </Card>
+              );
+            })}
+          </Stack>
+        )}
+
+        {error ? (
+          <Inline
+            gap="xs"
+            align="center"
+            style={{
+              color: "var(--danger)",
+              fontSize: "var(--font-sm)",
+            }}
+          >
+            <AlertTriangle size={14} />
+            <span>
+              {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
+            </span>
+          </Inline>
+        ) : null}
+      </Stack>
+    </Modal>
   );
 }
-
-const btnSmall: CSSProperties = {
-  padding: "6px 12px",
-  border: "none",
-  borderRadius: 8,
-  cursor: "pointer",
-  fontSize: 14,
-  background: "var(--tg-theme-button-color, #2ea6ff)",
-  color: "var(--tg-theme-button-text-color, #fff)",
-};
-
-const btnSmallDanger: CSSProperties = {
-  ...btnSmall,
-  background: "var(--tg-theme-destructive-text-color, #c0392b)",
-  color: "#fff",
-};

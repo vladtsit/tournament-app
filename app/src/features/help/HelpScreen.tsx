@@ -1,13 +1,43 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useEffect } from "react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  Crown,
+  Flag,
+  Globe,
+  Lock,
+  Settings,
+  Trophy,
+  UserCheck,
+  Users,
+  Zap,
+} from "lucide-react";
+import { Modal } from "../../ui";
 import { useBackButton } from "../../hooks/useBackButton";
 import { haptic } from "../../telegram";
 
 interface Props {
+  open: boolean;
   onClose: () => void;
 }
 
-const SECTION_KEYS = [
+type SectionKey =
+  | "intro"
+  | "registration"
+  | "teams"
+  | "live"
+  | "matches"
+  | "leaderboard"
+  | "history"
+  | "overall"
+  | "admin"
+  | "language"
+  | "privacy";
+
+const SECTION_KEYS: SectionKey[] = [
   "intro",
   "registration",
   "teams",
@@ -19,61 +49,128 @@ const SECTION_KEYS = [
   "admin",
   "language",
   "privacy",
-] as const;
+];
 
-export function HelpScreen({ onClose }: Props): JSX.Element {
+const ICON: Record<SectionKey, JSX.Element> = {
+  intro: <BookOpen size={18} />,
+  registration: <ClipboardList size={18} />,
+  teams: <Users size={18} />,
+  live: <Zap size={18} />,
+  matches: <Flag size={18} />,
+  leaderboard: <Trophy size={18} />,
+  history: <Crown size={18} />,
+  overall: <UserCheck size={18} />,
+  admin: <Settings size={18} />,
+  language: <Globe size={18} />,
+  privacy: <Lock size={18} />,
+};
+
+export function HelpScreen({ open, onClose }: Props): JSX.Element {
   const { t } = useTranslation();
+  const [openKey, setOpenKey] = useState<SectionKey>("intro");
 
-  useBackButton(true, onClose);
+  useBackButton(open, onClose);
   useEffect(() => {
-    haptic.selection();
-  }, []);
+    if (open) haptic.selection();
+  }, [open]);
 
   return (
-    <section
-      style={{
-        background: "var(--tg-theme-secondary-bg-color, #fafafa)",
-        borderRadius: 12,
-        padding: 16,
-        marginTop: 12,
-      }}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t("help.title")}
+      closeLabel={t("common.close")}
     >
-      <header
+      <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
+          flexDirection: "column",
+          gap: "var(--space-2)",
         }}
       >
-        <h2 style={{ margin: 0 }}>{t("help.title")}</h2>
-        <button
-          type="button"
-          onClick={onClose}
+        {SECTION_KEYS.map((key) => {
+          const isOpen = openKey === key;
+          return (
+            <article
+              key={key}
+              style={{
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-md)",
+                background: "var(--surface-2)",
+                overflow: "hidden",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setOpenKey(isOpen ? ("" as SectionKey) : key)}
+                aria-expanded={isOpen}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--space-3)",
+                  width: "100%",
+                  padding: "var(--space-3) var(--space-4)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--text)",
+                  font: "inherit",
+                  textAlign: "left",
+                  minHeight: "var(--tap-min)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    color: "var(--accent)",
+                    display: "inline-flex",
+                  }}
+                >
+                  {ICON[key]}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    fontWeight: "var(--weight-semibold)",
+                    fontSize: "var(--font-md)",
+                  }}
+                >
+                  {t(`help.sections.${key}.title`)}
+                </span>
+                <span aria-hidden="true" style={{ color: "var(--text-muted)" }}>
+                  {isOpen ? (
+                    <ChevronUp size={18} />
+                  ) : (
+                    <ChevronDown size={18} />
+                  )}
+                </span>
+              </button>
+              {isOpen ? (
+                <div
+                  style={{
+                    padding: "0 var(--space-4) var(--space-3)",
+                    color: "var(--text)",
+                    fontSize: "var(--font-sm)",
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {t(`help.sections.${key}.body`)}
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+        <p
           style={{
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            fontSize: 16,
-            color: "var(--tg-theme-link-color, #2ea6ff)",
+            marginTop: "var(--space-3)",
+            fontSize: "var(--font-sm)",
+            color: "var(--text-muted)",
+            textAlign: "center",
           }}
         >
-          {t("common.close")}
-        </button>
-      </header>
-      {SECTION_KEYS.map((key) => (
-        <article key={key} style={{ marginBottom: 14 }}>
-          <h3 style={{ margin: "0 0 4px 0", fontSize: 16 }}>
-            {t(`help.sections.${key}.title`)}
-          </h3>
-          <p style={{ margin: 0, lineHeight: 1.5 }}>
-            {t(`help.sections.${key}.body`)}
-          </p>
-        </article>
-      ))}
-      <p style={{ marginTop: 16, fontSize: 13, opacity: 0.7 }}>
-        {t("help.footer")}
-      </p>
-    </section>
+          {t("help.footer")}
+        </p>
+      </div>
+    </Modal>
   );
 }

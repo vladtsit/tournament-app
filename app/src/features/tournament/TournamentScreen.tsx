@@ -1,15 +1,40 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Crown,
+  Edit3,
+  Flag,
+  Flame,
+  RefreshCw,
+  Star,
+  Trash2,
+  Trophy,
+  UserPlus,
+  Users,
+  Utensils,
+} from "lucide-react";
 import { api, ApiClientError, downloadAuthed } from "../../apiClient";
-import { haptic, storage, isInTelegram } from "../../telegram";
+import { haptic, isInTelegram, storage } from "../../telegram";
 import { useMainButton } from "../../hooks/useMainButton";
 import { DisputesScreen } from "../admin/DisputesScreen";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  IconButton,
+  Inline,
+  ListRow,
+  SectionTitle,
+  SetScoreInput,
+  Spinner,
+  Stack,
+  ToggleChip,
+} from "../../ui";
 
 interface PlayerSummary {
   userId: string;
@@ -56,6 +81,25 @@ function fullName(p: { firstName: string; lastName?: string }): string {
   return p.lastName ? `${p.firstName} ${p.lastName}` : p.firstName;
 }
 
+type StatusBadgeVariant =
+  | "success"
+  | "info"
+  | "neutral"
+  | "warning";
+
+function statusVariant(s: TournamentDoc["status"]): StatusBadgeVariant {
+  switch (s) {
+    case "live":
+      return "success";
+    case "registration_open":
+      return "info";
+    case "ended":
+      return "neutral";
+    default:
+      return "warning";
+  }
+}
+
 interface Props {
   isAdmin: boolean;
   groupId: string;
@@ -65,6 +109,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
   const { t } = useTranslation();
   const [data, setData] = useState<CurrentResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [draftName, setDraftName] = useState("");
@@ -86,15 +131,17 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     }
   }, []);
 
-  // Background refresh without toggling the spinner — used by polling and
-  // visibility listeners so the screen updates silently when a partner pairs
-  // with the caller, when registration counts change, etc.
+  // Background refresh without toggling the page spinner. Animates the refresh
+  // icon so the user can tell a fetch is in flight.
   const silentReload = useCallback(async (): Promise<void> => {
+    setRefreshing(true);
     try {
       const res = await api<CurrentResponse>("/api/tournaments/current");
       setData(res);
     } catch {
       // ignore — keep last good state
+    } finally {
+      setRefreshing(false);
     }
   }, []);
 
@@ -102,9 +149,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     void reload();
   }, [reload]);
 
-  // Auto-refresh while waiting on external state (most commonly: a partner
-  // accepts you onto a team, or registration counts change). Polls every 15s
-  // and also fires when the tab/window regains focus.
+  // Auto-refresh while waiting for a partner / count changes.
   const tournamentForPoll = data?.tournament ?? null;
   const shouldPoll =
     !!tournamentForPoll &&
@@ -215,11 +260,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     }
   }, [data, reload, t]);
 
-  // Top-level MainButton coordinator. The three modes are mutually exclusive
-  // with each other AND with LiveSection's submit-match MainButton (LiveSection
-  // only mounts when `isLive && data.team`). TeamSection's pair MainButton may
-  // also be active when the admin is selecting a partner; child effects fire
-  // after parent so the pair-MB wins while a partner is selected.
+  // MainButton coordinator — unchanged from prior fix.
   const tournament = data?.tournament ?? null;
   const inTelegram = isInTelegram();
   const canCreate = !tournament && isAdmin && draftName.trim().length > 0;
@@ -257,50 +298,100 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     onClick: mbOnClick,
   });
 
-  if (loading) return <p>…</p>;
-  if (error)
+  if (loading) {
     return (
-      <p style={{ color: "var(--tg-theme-destructive-text-color, #c00)" }}>
-        {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
-      </p>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          padding: "var(--space-7) 0",
+        }}
+      >
+        <Spinner size={28} label={t("app.authenticating")} />
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <Stack gap="sm" align="center">
+          <AlertTriangle color="var(--danger)" size={28} />
+          <p style={{ color: "var(--danger)", textAlign: "center" }}>
+            {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => void reload()}>
+            {t("common.retry")}
+          </Button>
+        </Stack>
+      </Card>
+    );
+  }
 
   if (!data?.tournament) {
     return (
-      <div>
-        <p>{t("tournament.none")}</p>
-        {isAdmin && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <label
-              htmlFor="tournament-name"
-              style={{ fontSize: 13, opacity: 0.8 }}
-            >
-              {t("tournament.nameLabel")}
-            </label>
-            <input
-              id="tournament-name"
-              type="text"
-              value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
-              placeholder={t("tournament.namePlaceholder")}
-              disabled={busy}
-              maxLength={120}
-              style={inputStyle}
-            />
-            <button
-              type="button"
-              onClick={() => void createTournament()}
-              disabled={busy}
-              style={{
-                ...btnPrimary,
-                display: inTelegram ? "none" : undefined,
-              }}
-            >
-              {t("tournament.create")}
-            </button>
-          </div>
-        )}
-      </div>
+      <Card variant="hero">
+        <Stack gap="md" align="center">
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 64,
+              height: 64,
+              borderRadius: "var(--radius-pill)",
+              background: "var(--accent-soft)",
+              color: "var(--accent)",
+            }}
+          >
+            <Trophy size={32} />
+          </span>
+          <h2
+            style={{
+              fontSize: "var(--font-xl)",
+              fontWeight: "var(--weight-bold)",
+              textAlign: "center",
+            }}
+          >
+            {t("tournament.none")}
+          </h2>
+          {isAdmin ? (
+            <Stack gap="sm" style={{ width: "100%" }}>
+              <label
+                htmlFor="tournament-name"
+                style={{
+                  fontSize: "var(--font-sm)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                {t("tournament.nameLabel")}
+              </label>
+              <input
+                id="tournament-name"
+                type="text"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder={t("tournament.namePlaceholder")}
+                disabled={busy}
+                maxLength={120}
+                style={textInputStyle}
+              />
+              <Button
+                onClick={() => void createTournament()}
+                disabled={busy || draftName.trim().length === 0}
+                loading={busy}
+                fullWidth
+                size="lg"
+                leftIcon={<Trophy size={18} />}
+                style={{ display: inTelegram ? "none" : undefined }}
+              >
+                {t("tournament.create")}
+              </Button>
+            </Stack>
+          ) : null}
+        </Stack>
+      </Card>
     );
   }
 
@@ -311,125 +402,209 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
   const isLive = status === "live";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 8,
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{ fontSize: 18, margin: "0 0 4px 0" }}>
-            {data.tournament.name}{" "}
-            <span style={statusBadge(status)}>
-              {t(`tournament.status.${status}`)}
-            </span>
-          </h2>
-          <p style={{ fontSize: 13, opacity: 0.8, margin: 0 }}>
-            {t("tournament.counts", {
-              playing: data.counts.playing,
-              bbq: data.counts.bbq,
-            })}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            haptic.selection();
-            void silentReload();
-          }}
-          aria-label={t("common.refresh")}
-          title={t("common.refresh")}
-          style={{
-            border: "1px solid var(--tg-theme-section-separator-color, #ccc)",
-            background: "transparent",
-            color: "inherit",
-            borderRadius: 999,
-            width: 32,
-            height: 32,
-            cursor: "pointer",
-            fontSize: 16,
-            lineHeight: 1,
-            padding: 0,
-            flex: "0 0 auto",
-          }}
-        >
-          ↻
-        </button>
-      </header>
-
-      {!isLive && (
-        <section style={cardStyle}>
-          <h3 style={sectionTitle}>{t("registration.title")}</h3>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Toggle
+    <Stack gap="md">
+      {/* ─── 3a. Hero status header ─────────────────────────────────────── */}
+      <Card variant="hero">
+        <Stack gap="sm">
+          <Inline justify="space-between" align="flex-start" gap="sm">
+            <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+              <Inline gap="xs" wrap>
+                <Badge variant={statusVariant(status)} size="sm" dot>
+                  {t(`tournament.status.${status}`)}
+                </Badge>
+              </Inline>
+              <h2
+                style={{
+                  fontSize: "var(--font-xl)",
+                  fontWeight: "var(--weight-bold)",
+                  lineHeight: 1.2,
+                  wordBreak: "break-word",
+                }}
+              >
+                {data.tournament.name}
+              </h2>
+            </Stack>
+            <IconButton
+              icon={<RefreshCw size={18} />}
+              aria-label={t("common.refresh")}
+              variant="flat"
+              size="sm"
+              spinning={refreshing}
+              onClick={() => {
+                haptic.selection();
+                void silentReload();
+              }}
+            />
+          </Inline>
+          <Inline gap="lg" wrap>
+            <MetricChip
+              icon={<Users size={18} />}
+              value={data.counts.playing}
               label={t("registration.playing")}
-              on={playing}
+            />
+            <MetricChip
+              icon={<Utensils size={18} />}
+              value={data.counts.bbq}
+              label={t("registration.bbq")}
+              tone="warning"
+            />
+          </Inline>
+        </Stack>
+      </Card>
+
+      {/* ─── 3b. Registration toggles ───────────────────────────────────── */}
+      {!isLive ? (
+        <Card>
+          <SectionTitle>{t("registration.title")}</SectionTitle>
+          <Inline gap="sm" wrap>
+            <ToggleChip
+              checked={playing}
+              tone="success"
+              icon={<Users size={16} />}
               disabled={busy}
               onClick={() => void upsertRegistration(!playing, bbq)}
-            />
-            <Toggle
-              label={t("registration.bbq")}
-              on={bbq}
+            >
+              {t("registration.playing")}
+            </ToggleChip>
+            <ToggleChip
+              checked={bbq}
+              tone="warning"
+              icon={<Flame size={16} />}
               disabled={busy}
               onClick={() => void upsertRegistration(playing, !bbq)}
-            />
-          </div>
-        </section>
-      )}
+            >
+              {t("registration.bbq")}
+            </ToggleChip>
+          </Inline>
+        </Card>
+      ) : null}
 
-      {!isLive && playing && (
+      {/* ─── 3c. Team section ───────────────────────────────────────────── */}
+      {!isLive && playing ? (
         <TeamSection
           tournamentId={data.tournament.id}
           groupId={groupId}
           team={data.team}
           onChange={reload}
         />
-      )}
+      ) : null}
 
-      {!isLive && isAdmin && status === "registration_open" && (
-        <button
-          type="button"
+      {/* Inline Start button — hidden in Telegram (MainButton handles it). */}
+      {!isLive && isAdmin && status === "registration_open" ? (
+        <Button
           onClick={() => void startTournament()}
           disabled={busy}
-          style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
+          loading={busy}
+          size="lg"
+          fullWidth
+          leftIcon={<Flag size={18} />}
+          style={{ display: inTelegram ? "none" : undefined }}
         >
           {t("tournament.start")}
-        </button>
-      )}
+        </Button>
+      ) : null}
 
-      {isLive && data.team && (
+      {/* ─── 3d-3e. Live section ────────────────────────────────────────── */}
+      {isLive && data.team ? (
         <LiveSection
           tournamentId={data.tournament.id}
           myTeam={data.team}
           isAdmin={isAdmin}
         />
-      )}
-      {isLive && !data.team && (
-        <section style={cardStyle}>
-          <p style={{ opacity: 0.8 }}>{t("live.notInTeam")}</p>
-        </section>
-      )}
+      ) : null}
+      {isLive && !data.team ? (
+        <Card>
+          <EmptyState
+            icon={<Trophy size={28} />}
+            title={t("live.notInTeam")}
+          />
+        </Card>
+      ) : null}
 
-      {isLive && isAdmin && (
-        <button
-          type="button"
+      {/* End-tournament button — visible to admin; in Telegram hidden when MB
+          surface is taken by LiveSection. */}
+      {isLive && isAdmin ? (
+        <Button
+          variant="danger"
           onClick={() => void endTournament()}
           disabled={busy}
+          loading={busy}
+          fullWidth
           style={{
-            ...btnDanger,
             display: inTelegram && !data.team ? "none" : undefined,
           }}
         >
           {t("tournament.end")}
-        </button>
-      )}
-    </div>
+        </Button>
+      ) : null}
+    </Stack>
   );
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * Small metric pill used in the hero header.
+ * ────────────────────────────────────────────────────────────────────────── */
+function MetricChip({
+  icon,
+  value,
+  label,
+  tone = "accent",
+}: {
+  icon: JSX.Element;
+  value: number;
+  label: string;
+  tone?: "accent" | "warning";
+}): JSX.Element {
+  const color = tone === "warning" ? "var(--warning)" : "var(--accent)";
+  const bg =
+    tone === "warning" ? "var(--warning-soft)" : "var(--accent-soft)";
+  return (
+    <Inline gap="sm" align="center">
+      <span
+        aria-hidden="true"
+        style={{
+          display: "inline-flex",
+          width: 36,
+          height: 36,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: "var(--radius-pill)",
+          background: bg,
+          color,
+        }}
+      >
+        {icon}
+      </span>
+      <Stack gap="none">
+        <span
+          style={{
+            fontSize: "var(--font-xl)",
+            fontWeight: "var(--weight-bold)",
+            fontVariantNumeric: "tabular-nums",
+            lineHeight: 1,
+          }}
+        >
+          {value}
+        </span>
+        <span
+          style={{
+            fontSize: "var(--font-xs)",
+            color: "var(--text-muted)",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            fontWeight: "var(--weight-semibold)",
+          }}
+        >
+          {label}
+        </span>
+      </Stack>
+    </Inline>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Team section
+ * ────────────────────────────────────────────────────────────────────────── */
 function TeamSection({
   tournamentId,
   groupId,
@@ -479,8 +654,6 @@ function TeamSection({
 
   const pair = useCallback(
     async (partnerUserId: string, partnerLabel: string): Promise<void> => {
-      // In Telegram, MainButton is the confirmation surface; outside Telegram
-      // fall back to a browser confirm dialog.
       if (
         !inTelegram &&
         typeof window !== "undefined" &&
@@ -554,161 +727,123 @@ function TeamSection({
     }
   }, [tournamentId, team, onChange, t]);
 
+  const sortedCandidates = useMemo(() => {
+    return players
+      .filter((p) => !p.isSelf)
+      .slice()
+      .sort((a, b) => {
+        if (lastPartnerId) {
+          if (a.userId === lastPartnerId) return -1;
+          if (b.userId === lastPartnerId) return 1;
+        }
+        return fullName(a).localeCompare(fullName(b));
+      });
+  }, [players, lastPartnerId]);
+
   return (
-    <section style={cardStyle}>
-      <h3 style={sectionTitle}>{t("teams.title")}</h3>
+    <Card>
+      <SectionTitle>{t("teams.title")}</SectionTitle>
       {team ? (
-        <>
-          <p style={{ margin: "0 0 8px 0" }}>
-            {t("teams.you")}: {team.players.map(fullName).join(" + ")}
-          </p>
-          <button
-            type="button"
+        <Stack gap="sm">
+          <Inline gap="sm" align="center" wrap>
+            {team.players.map((p) => (
+              <Inline key={p.userId} gap="xs" align="center">
+                <Avatar id={p.userId} name={fullName(p)} size={32} />
+                <span style={{ fontWeight: "var(--weight-semibold)" }}>
+                  {fullName(p)}
+                </span>
+              </Inline>
+            ))}
+          </Inline>
+          <Button
+            variant="danger"
+            size="sm"
             onClick={() => void leaveTeam()}
             disabled={busy}
-            style={btnSmallDanger}
+            loading={busy}
           >
             {t("teams.leave")}
-          </button>
-        </>
+          </Button>
+        </Stack>
       ) : loading ? (
-        <p>…</p>
-      ) : players.filter((p) => !p.isSelf).length === 0 ? (
-        <p style={{ opacity: 0.7 }}>{t("teams.nooneLooking")}</p>
+        <Inline justify="center" style={{ padding: "var(--space-4)" }}>
+          <Spinner />
+        </Inline>
+      ) : sortedCandidates.length === 0 ? (
+        <EmptyState
+          icon={<UserPlus size={28} />}
+          title={t("teams.nooneLooking")}
+        />
       ) : (
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {players
-            .filter((p) => !p.isSelf)
-            .slice()
-            .sort((a, b) => {
-              if (lastPartnerId) {
-                if (a.userId === lastPartnerId) return -1;
-                if (b.userId === lastPartnerId) return 1;
+        <Stack gap="xs">
+          {sortedCandidates.map((p) => {
+            const recent = p.userId === lastPartnerId;
+            const selected = p.userId === pendingPartnerId;
+            const onRowClick = (): void => {
+              if (busy) return;
+              if (inTelegram) {
+                haptic.selection();
+                setPendingPartnerId((curr) =>
+                  curr === p.userId ? null : p.userId,
+                );
+              } else {
+                void pair(p.userId, fullName(p));
               }
-              return fullName(a).localeCompare(fullName(b));
-            })
-            .map((p) => {
-              const recent = p.userId === lastPartnerId;
-              const selected = p.userId === pendingPartnerId;
-              const accent = "var(--tg-theme-button-color, #2ea6ff)";
-              const onRowClick = (): void => {
-                if (busy) return;
-                if (inTelegram) {
-                  haptic.selection();
-                  setPendingPartnerId((curr) =>
-                    curr === p.userId ? null : p.userId,
-                  );
+            };
+            return (
+              <ListRow
+                key={p.userId}
+                interactive
+                bordered
+                selected={selected}
+                disabled={busy}
+                onClick={onRowClick}
+                leading={
+                  <Avatar id={p.userId} name={fullName(p)} size={36} />
                 }
-              };
-              return (
-                <li
-                  key={p.userId}
-                  onClick={onRowClick}
-                  style={{
-                    ...listRow,
-                    cursor: inTelegram ? "pointer" : "default",
-                    ...(selected
-                      ? {
-                          background:
-                            "var(--tg-theme-secondary-bg-color, #f1f1f1)",
-                          borderLeft: `3px solid ${accent}`,
-                          paddingLeft: 6,
-                        }
-                      : recent
-                        ? {
-                            borderLeft: `3px solid ${accent}`,
-                            paddingLeft: 6,
-                          }
-                        : null),
-                  }}
-                >
-                  <span>
-                    {fullName(p)}
-                    {recent && (
-                      <span
-                        style={{ marginLeft: 6, fontSize: 12, opacity: 0.7 }}
-                      >
-                        ★
-                      </span>
-                    )}
-                    {selected && (
-                      <span
-                        style={{
-                          marginLeft: 6,
-                          fontSize: 12,
-                          opacity: 0.8,
-                          color: accent,
-                        }}
-                      >
-                        ✓
-                      </span>
-                    )}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void pair(p.userId, fullName(p));
-                    }}
-                    disabled={busy}
-                    style={{
-                      ...btnSmall,
-                      display: inTelegram ? "none" : undefined,
-                    }}
-                  >
-                    {t("teams.pair")}
-                  </button>
-                </li>
-              );
-            })}
-        </ul>
+                primary={fullName(p)}
+                secondary={
+                  recent ? (
+                    <Inline gap="xs" align="center">
+                      <Star
+                        size={12}
+                        fill="var(--podium-gold)"
+                        color="var(--podium-gold)"
+                      />
+                      <span>{t("teams.lastPartner")}</span>
+                    </Inline>
+                  ) : null
+                }
+                trailing={
+                  selected ? (
+                    <Check size={18} color="var(--accent)" />
+                  ) : (
+                    <UserPlus size={18} color="var(--text-muted)" />
+                  )
+                }
+              />
+            );
+          })}
+        </Stack>
       )}
-      {error && (
+      {error ? (
         <p
           style={{
-            color: "var(--tg-theme-destructive-text-color, #c00)",
-            fontSize: 13,
+            color: "var(--danger)",
+            fontSize: "var(--font-sm)",
+            marginTop: "var(--space-2)",
           }}
         >
           {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
         </p>
-      )}
-    </section>
+      ) : null}
+    </Card>
   );
 }
 
-function Toggle({
-  label,
-  on,
-  disabled,
-  onClick,
-}: {
-  label: string;
-  on: boolean;
-  disabled: boolean;
-  onClick: () => void;
-}): JSX.Element {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        ...btnBase,
-        background: on
-          ? "var(--tg-theme-button-color, #2ea6ff)"
-          : "var(--tg-theme-secondary-bg-color, #f1f1f1)",
-        color: on
-          ? "var(--tg-theme-button-text-color, #fff)"
-          : "var(--tg-theme-text-color, #000)",
-      }}
-    >
-      {on ? "✓ " : ""}
-      {label}
-    </button>
-  );
-}
-
+/* ────────────────────────────────────────────────────────────────────────────
+ * Live section
+ * ────────────────────────────────────────────────────────────────────────── */
 interface OpponentRow {
   teamId: string;
   players: PlayerSummary[];
@@ -765,13 +900,13 @@ function LiveSection({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Set inputs: 3 rows of {a,b} (third optional).
-  const [s1a, setS1a] = useState("");
-  const [s1b, setS1b] = useState("");
-  const [s2a, setS2a] = useState("");
-  const [s2b, setS2b] = useState("");
-  const [s3a, setS3a] = useState("");
-  const [s3b, setS3b] = useState("");
+  // Set scores as `number | ""` so the SetScoreInput stepper integrates cleanly.
+  const [s1a, setS1a] = useState<number | "">("");
+  const [s1b, setS1b] = useState<number | "">("");
+  const [s2a, setS2a] = useState<number | "">("");
+  const [s2b, setS2b] = useState<number | "">("");
+  const [s3a, setS3a] = useState<number | "">("");
+  const [s3b, setS3b] = useState<number | "">("");
   const [opponentId, setOpponentId] = useState("");
   const [showDisputes, setShowDisputes] = useState(false);
 
@@ -810,20 +945,18 @@ function LiveSection({
       return;
     }
     const sets: Array<{ a: number; b: number }> = [];
-    const triples: Array<[string, string]> = [
+    const triples: Array<[number | "", number | ""]> = [
       [s1a, s1b],
       [s2a, s2b],
       [s3a, s3b],
     ];
     for (const [a, b] of triples) {
       if (a === "" && b === "") continue;
-      const ai = Number(a);
-      const bi = Number(b);
-      if (!Number.isFinite(ai) || !Number.isFinite(bi)) {
+      if (typeof a !== "number" || typeof b !== "number") {
         setError("invalid_set_score");
         return;
       }
-      sets.push({ a: ai, b: bi });
+      sets.push({ a, b });
     }
     setBusy(true);
     setError(null);
@@ -991,7 +1124,13 @@ function LiveSection({
     onClick: () => void submitMatch(),
   });
 
-  if (loading) return <p>…</p>;
+  if (loading) {
+    return (
+      <Inline justify="center" style={{ padding: "var(--space-5)" }}>
+        <Spinner size={28} />
+      </Inline>
+    );
+  }
 
   const teamLabel = (row: { players: PlayerSummary[] }): string =>
     row.players.map(fullName).join(" + ");
@@ -1006,139 +1145,196 @@ function LiveSection({
     return id.slice(0, 6);
   };
 
+  const disputeCount = matches.filter((m) => m.status === "disputed").length;
+
   return (
     <>
-      {showDisputes && (
+      {showDisputes ? (
         <DisputesScreen
           tournamentId={tournamentId}
           onClose={() => setShowDisputes(false)}
         />
-      )}
+      ) : null}
       <div style={{ display: showDisputes ? "none" : "contents" }}>
-        {isAdmin && (
-          <section style={cardStyle}>
-            <h3 style={sectionTitle}>{t("admin.overview")}</h3>
-            <p style={{ margin: 0, fontSize: 14 }}>
-              {t("admin.counts", {
-                teams:
-                  (board?.ranked.length ?? 0) + (board?.needsMore.length ?? 0),
-                submitted: matches.filter((m) => m.status === "submitted")
-                  .length,
-                confirmed: matches.filter((m) => m.status === "confirmed")
-                  .length,
-                disputed: matches.filter((m) => m.status === "disputed").length,
-              })}
-            </p>
+        {/* ─── 3f. Admin overview ─────────────────────────────────────── */}
+        {isAdmin ? (
+          <Card>
+            <SectionTitle>{t("admin.overview")}</SectionTitle>
             <div
               style={{
-                display: "flex",
-                gap: 8,
-                marginTop: 8,
-                flexWrap: "wrap",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: "var(--space-3)",
+                marginBottom: "var(--space-3)",
               }}
             >
-              <button
-                type="button"
+              <MetricStat
+                label={t("live.col.team")}
+                value={
+                  (board?.ranked.length ?? 0) +
+                  (board?.needsMore.length ?? 0)
+                }
+              />
+              <MetricStat
+                label={t("live.matchStatus.confirmed")}
+                value={matches.filter((m) => m.status === "confirmed").length}
+                tone="success"
+              />
+              <MetricStat
+                label={t("live.matchStatus.submitted")}
+                value={matches.filter((m) => m.status === "submitted").length}
+              />
+              <MetricStat
+                label={t("live.matchStatus.disputed")}
+                value={disputeCount}
+                tone={disputeCount > 0 ? "danger" : "neutral"}
+              />
+            </div>
+            <Inline gap="sm" wrap>
+              <Button
+                variant={disputeCount > 0 ? "danger" : "secondary"}
+                size="sm"
+                leftIcon={<AlertTriangle size={16} />}
                 onClick={() => {
                   haptic.selection();
                   setShowDisputes(true);
                 }}
-                style={btnSmall}
               >
-                {t("admin.openDisputes", {
-                  n: matches.filter((m) => m.status === "disputed").length,
-                })}
-              </button>
-              <button
-                type="button"
+                {t("admin.openDisputes", { n: disputeCount })}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() =>
                   void downloadAuthed(
                     `/api/tournaments/${tournamentId}/bbq-export`,
                     `bbq-${tournamentId}.csv`,
                   )
                 }
-                style={btnSmall}
               >
                 {t("admin.exportBbq")}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() =>
                   void downloadAuthed(
                     `/api/tournaments/${tournamentId}/results-export`,
                     `results-${tournamentId}.csv`,
                   )
                 }
-                style={btnSmall}
               >
                 {t("admin.exportResults")}
-              </button>
+              </Button>
+            </Inline>
+          </Card>
+        ) : null}
+
+        {/* ─── 3d. Match entry ────────────────────────────────────────── */}
+        <Card>
+          <SectionTitle>{t("live.submit")}</SectionTitle>
+          <Stack gap="md">
+            <div>
+              <label
+                style={{
+                  fontSize: "var(--font-sm)",
+                  color: "var(--text-muted)",
+                  display: "block",
+                  marginBottom: "var(--space-2)",
+                }}
+              >
+                {t("live.opponent")}
+              </label>
+              {opponents.length === 0 ? (
+                <p
+                  style={{
+                    color: "var(--text-muted)",
+                    fontSize: "var(--font-sm)",
+                  }}
+                >
+                  {t("live.noTeams")}
+                </p>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "var(--space-2)",
+                    overflowX: "auto",
+                    paddingBottom: "var(--space-1)",
+                    marginInline: "calc(var(--space-4) * -1)",
+                    paddingInline: "var(--space-4)",
+                    scrollbarWidth: "thin",
+                  }}
+                >
+                  {opponents.map((o) => (
+                    <ToggleChip
+                      key={o.teamId}
+                      checked={opponentId === o.teamId}
+                      onClick={() => {
+                        haptic.selection();
+                        setOpponentId(
+                          opponentId === o.teamId ? "" : o.teamId,
+                        );
+                      }}
+                    >
+                      {teamLabel(o)}
+                    </ToggleChip>
+                  ))}
+                </div>
+              )}
             </div>
-          </section>
-        )}
-        <section style={cardStyle}>
-          <h3 style={sectionTitle}>{t("live.submit")}</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <label style={{ fontSize: 13, opacity: 0.8 }}>
-              {t("live.opponent")}
-            </label>
-            <select
-              value={opponentId}
-              onChange={(e) => setOpponentId(e.target.value)}
-              disabled={busy}
-              style={inputStyle}
-            >
-              <option value="">{t("live.pickOpponent")}</option>
-              {opponents.map((o) => (
-                <option key={o.teamId} value={o.teamId}>
-                  {teamLabel(o)} — {o.matchesPlayed}
-                </option>
-              ))}
-            </select>
-            <SetInputs
-              label={t("live.set", { n: 1 })}
-              a={s1a}
-              b={s1b}
-              setA={setS1a}
-              setB={setS1b}
-              disabled={busy}
-            />
-            <SetInputs
-              label={t("live.set", { n: 2 })}
-              a={s2a}
-              b={s2b}
-              setA={setS2a}
-              setB={setS2b}
-              disabled={busy}
-            />
-            <SetInputs
-              label={t("live.set", { n: 3 })}
-              a={s3a}
-              b={s3b}
-              setA={setS3a}
-              setB={setS3b}
-              disabled={busy}
-            />
-            <button
-              type="button"
+
+            <Stack gap="sm">
+              <SetRow
+                label={t("live.set", { n: 1 })}
+                a={s1a}
+                b={s1b}
+                onA={setS1a}
+                onB={setS1b}
+                disabled={busy}
+              />
+              <SetRow
+                label={t("live.set", { n: 2 })}
+                a={s2a}
+                b={s2b}
+                onA={setS2a}
+                onB={setS2b}
+                disabled={busy}
+              />
+              <SetRow
+                label={t("live.set", { n: 3 })}
+                a={s3a}
+                b={s3b}
+                onA={setS3a}
+                onB={setS3b}
+                disabled={busy}
+              />
+            </Stack>
+
+            <Button
               onClick={() => void submitMatch()}
-              disabled={busy}
-              style={{
-                ...btnPrimary,
-                display: inTelegram ? "none" : undefined,
-              }}
+              disabled={!canSubmit}
+              loading={busy}
+              fullWidth
+              size="lg"
+              leftIcon={<Trophy size={18} />}
+              style={{ display: inTelegram ? "none" : undefined }}
             >
               {t("live.submitMatch")}
-            </button>
-          </div>
-        </section>
+            </Button>
+          </Stack>
+        </Card>
 
-        <section style={cardStyle}>
-          <h3 style={sectionTitle}>{t("live.recent")}</h3>
+        {/* ─── 3e. Recent matches ─────────────────────────────────────── */}
+        <Card>
+          <SectionTitle>{t("live.recent")}</SectionTitle>
           {matches.length === 0 ? (
-            <p style={{ opacity: 0.7 }}>{t("live.noMatches")}</p>
+            <EmptyState
+              icon={<Flag size={28} />}
+              title={t("live.noMatches")}
+            />
           ) : (
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            <Stack gap="xs">
               {matches.slice(0, 20).map((m) => {
                 const involvesMe =
                   m.teamAId === myTeam.id || m.teamBId === myTeam.id;
@@ -1148,286 +1344,381 @@ function LiveSection({
                 const canConfirm =
                   involvesMe && m.status === "submitted" && !iSubmitted;
                 const canDispute = involvesMe && m.status !== "disputed";
+                const labelA = teamLabelById(m.teamAId);
+                const labelB = teamLabelById(m.teamBId);
+                const score = m.sets.map((s) => `${s.a}-${s.b}`).join(", ");
+                const statusV =
+                  m.status === "confirmed"
+                    ? "success"
+                    : m.status === "disputed"
+                      ? "danger"
+                      : "warning";
                 return (
-                  <li key={m.id} style={listRow}>
-                    <span style={{ fontSize: 13 }}>
-                      {teamLabelById(m.teamAId)} vs {teamLabelById(m.teamBId)}
-                      {" — "}
-                      {m.sets.map((s) => `${s.a}-${s.b}`).join(", ")}
-                      {"  "}
-                      <em style={{ opacity: 0.7 }}>
-                        [{t(`live.matchStatus.${m.status}`)}]
-                      </em>
-                    </span>
-                    <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {canConfirm && (
-                        <button
-                          type="button"
-                          onClick={() => void confirmMatch(m.id)}
-                          disabled={busy}
-                          style={btnSmall}
+                  <Card
+                    key={m.id}
+                    variant="flat"
+                    padding="sm"
+                    style={{ background: "var(--surface-2)" }}
+                  >
+                    <Stack gap="xs">
+                      <Inline justify="space-between" wrap gap="sm">
+                        <span
+                          style={{
+                            fontWeight: "var(--weight-semibold)",
+                            fontSize: "var(--font-sm)",
+                          }}
                         >
-                          {t("live.confirm")}
-                        </button>
-                      )}
-                      {canDispute && (
-                        <button
-                          type="button"
-                          onClick={() => void disputeMatch(m.id)}
-                          disabled={busy}
-                          style={btnSmall}
-                        >
-                          {t("live.dispute")}
-                        </button>
-                      )}
-                      {isAdmin && m.status === "disputed" && (
-                        <button
-                          type="button"
-                          onClick={() => void adminForceConfirm(m.id)}
-                          disabled={busy}
-                          style={btnSmall}
-                        >
-                          {t("admin.resolveConfirm")}
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => void adminEditMatch(m)}
-                          disabled={busy}
-                          style={btnSmall}
-                        >
-                          {t("admin.edit")}
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => void adminDeleteMatch(m)}
-                          disabled={busy}
-                          style={btnSmallDanger}
-                        >
-                          {t("admin.delete")}
-                        </button>
-                      )}
-                    </span>
-                  </li>
+                          {m.winner === "A" ? (
+                            <strong>{labelA}</strong>
+                          ) : (
+                            labelA
+                          )}{" "}
+                          <span style={{ color: "var(--text-muted)" }}>vs</span>{" "}
+                          {m.winner === "B" ? (
+                            <strong>{labelB}</strong>
+                          ) : (
+                            labelB
+                          )}
+                        </span>
+                        <Badge variant={statusV} size="sm">
+                          {t(`live.matchStatus.${m.status}`)}
+                        </Badge>
+                      </Inline>
+                      <span
+                        style={{
+                          fontVariantNumeric: "tabular-nums",
+                          fontSize: "var(--font-md)",
+                          fontWeight: "var(--weight-bold)",
+                        }}
+                      >
+                        {score}
+                      </span>
+                      {canConfirm ||
+                      canDispute ||
+                      (isAdmin && m.status === "disputed") ||
+                      isAdmin ? (
+                        <Inline gap="xs" wrap>
+                          {canConfirm ? (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              leftIcon={<CheckCircle2 size={14} />}
+                              onClick={() => void confirmMatch(m.id)}
+                              disabled={busy}
+                            >
+                              {t("live.confirm")}
+                            </Button>
+                          ) : null}
+                          {canDispute ? (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              leftIcon={<AlertTriangle size={14} />}
+                              onClick={() => void disputeMatch(m.id)}
+                              disabled={busy}
+                            >
+                              {t("live.dispute")}
+                            </Button>
+                          ) : null}
+                          {isAdmin && m.status === "disputed" ? (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => void adminForceConfirm(m.id)}
+                              disabled={busy}
+                            >
+                              {t("admin.resolveConfirm")}
+                            </Button>
+                          ) : null}
+                          {isAdmin ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              leftIcon={<Edit3 size={14} />}
+                              onClick={() => void adminEditMatch(m)}
+                              disabled={busy}
+                            >
+                              {t("admin.edit")}
+                            </Button>
+                          ) : null}
+                          {isAdmin ? (
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              leftIcon={<Trash2 size={14} />}
+                              onClick={() => void adminDeleteMatch(m)}
+                              disabled={busy}
+                            >
+                              {t("admin.delete")}
+                            </Button>
+                          ) : null}
+                        </Inline>
+                      ) : null}
+                    </Stack>
+                  </Card>
                 );
               })}
-            </ul>
+            </Stack>
           )}
-        </section>
+        </Card>
 
-        {board && (
-          <section style={cardStyle}>
-            <h3 style={sectionTitle}>{t("live.leaderboard")}</h3>
+        {/* ─── Leaderboard ────────────────────────────────────────────── */}
+        {board ? (
+          <Card>
+            <SectionTitle>{t("live.leaderboard")}</SectionTitle>
             {board.ranked.length === 0 && board.needsMore.length === 0 ? (
-              <p style={{ opacity: 0.7 }}>{t("live.noTeams")}</p>
+              <EmptyState
+                icon={<Trophy size={28} />}
+                title={t("live.noTeams")}
+              />
             ) : (
-              <>
-                <LeaderboardTable rows={board.ranked} />
-                {board.needsMore.length > 0 && (
+              <Stack gap="xs">
+                {board.ranked.map((r, i) => (
+                  <LeaderboardRowView
+                    key={r.teamId}
+                    rank={i + 1}
+                    row={r}
+                    isMine={r.teamId === myTeam.id}
+                  />
+                ))}
+                {board.needsMore.length > 0 ? (
                   <>
                     <p
                       style={{
-                        fontSize: 12,
-                        opacity: 0.7,
-                        margin: "8px 0 4px",
+                        fontSize: "var(--font-xs)",
+                        color: "var(--text-muted)",
+                        marginTop: "var(--space-2)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                        fontWeight: "var(--weight-semibold)",
                       }}
                     >
                       {t("live.needsMore", {
                         n: board.minMatchesForRanking,
                       })}
                     </p>
-                    <LeaderboardTable rows={board.needsMore} faded />
+                    {board.needsMore.map((r) => (
+                      <LeaderboardRowView
+                        key={r.teamId}
+                        rank={null}
+                        row={r}
+                        isMine={r.teamId === myTeam.id}
+                        faded
+                      />
+                    ))}
                   </>
-                )}
-              </>
+                ) : null}
+              </Stack>
             )}
-          </section>
-        )}
+          </Card>
+        ) : null}
 
-        {error && (
-          <p
-            style={{
-              color: "var(--tg-theme-destructive-text-color, #c00)",
-              fontSize: 13,
-            }}
-          >
-            {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
-          </p>
-        )}
+        {error ? (
+          <Card variant="flat" padding="sm" style={{ borderColor: "var(--danger)" }}>
+            <Inline gap="sm" align="center">
+              <AlertTriangle color="var(--danger)" size={18} />
+              <span style={{ color: "var(--danger)", fontSize: "var(--font-sm)" }}>
+                {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
+              </span>
+            </Inline>
+          </Card>
+        ) : null}
       </div>
     </>
   );
 }
 
-function SetInputs({
+/* ────────────────────────────────────────────────────────────────────────────
+ * Smaller helpers
+ * ────────────────────────────────────────────────────────────────────────── */
+
+function MetricStat({
   label,
-  a,
-  b,
-  setA,
-  setB,
-  disabled,
+  value,
+  tone = "neutral",
 }: {
   label: string;
-  a: string;
-  b: string;
-  setA: (v: string) => void;
-  setB: (v: string) => void;
-  disabled: boolean;
+  value: number;
+  tone?: "neutral" | "success" | "danger";
 }): JSX.Element {
+  const color =
+    tone === "success"
+      ? "var(--success)"
+      : tone === "danger"
+        ? "var(--danger)"
+        : "var(--text)";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontSize: 13, width: 56, opacity: 0.8 }}>{label}</span>
-      <input
-        type="number"
-        min={0}
-        max={20}
-        value={a}
-        onChange={(e) => setA(e.target.value)}
-        disabled={disabled}
-        style={{ ...inputStyle, width: 60 }}
-      />
-      <span>–</span>
-      <input
-        type="number"
-        min={0}
-        max={20}
-        value={b}
-        onChange={(e) => setB(e.target.value)}
-        disabled={disabled}
-        style={{ ...inputStyle, width: 60 }}
-      />
+    <div
+      style={{
+        background: "var(--surface-2)",
+        borderRadius: "var(--radius-md)",
+        padding: "var(--space-3)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+      }}
+    >
+      <span
+        style={{
+          fontSize: "var(--font-2xl)",
+          fontWeight: "var(--weight-bold)",
+          color,
+          lineHeight: 1,
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {value}
+      </span>
+      <span
+        style={{
+          fontSize: "var(--font-xs)",
+          color: "var(--text-muted)",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          fontWeight: "var(--weight-semibold)",
+        }}
+      >
+        {label}
+      </span>
     </div>
   );
 }
 
-function LeaderboardTable({
-  rows,
-  faded,
+function SetRow({
+  label,
+  a,
+  b,
+  onA,
+  onB,
+  disabled,
 }: {
-  rows: LeaderboardRow[];
-  faded?: boolean;
+  label: string;
+  a: number | "";
+  b: number | "";
+  onA: (v: number | "") => void;
+  onB: (v: number | "") => void;
+  disabled: boolean;
 }): JSX.Element {
-  const { t } = useTranslation();
   return (
-    <table
-      style={{
-        width: "100%",
-        borderCollapse: "collapse",
-        fontSize: 13,
-        opacity: faded ? 0.7 : 1,
-      }}
-    >
-      <thead>
-        <tr style={{ textAlign: "left" }}>
-          <th>#</th>
-          <th>{t("live.col.team")}</th>
-          <th>{t("live.col.played")}</th>
-          <th>{t("live.col.wins")}</th>
-          <th>{t("live.col.sets")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r, i) => (
-          <tr key={r.teamId}>
-            <td>{i + 1}</td>
-            <td>{r.players.map(fullName).join(" + ")}</td>
-            <td>{r.matches}</td>
-            <td>{r.wins}</td>
-            <td>
-              {r.setsFor}-{r.setsAgainst}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <Inline gap="md" justify="space-between" align="center" wrap>
+      <span
+        style={{
+          fontSize: "var(--font-sm)",
+          color: "var(--text-muted)",
+          fontWeight: "var(--weight-semibold)",
+          minWidth: 48,
+        }}
+      >
+        {label}
+      </span>
+      <SetScoreInput
+        a={a}
+        b={b}
+        onChangeA={onA}
+        onChangeB={onB}
+        disabled={disabled}
+      />
+    </Inline>
   );
 }
 
-function statusBadge(status: TournamentDoc["status"]): CSSProperties {
-  const bg =
-    status === "live"
-      ? "#1aa260"
-      : status === "registration_open"
-        ? "#2ea6ff"
-        : status === "ended"
-          ? "#888"
-          : "#bbb";
-  return {
-    fontSize: 11,
-    fontWeight: 600,
-    padding: "2px 8px",
-    borderRadius: 10,
-    background: bg,
-    color: "#fff",
-    marginLeft: 6,
-    verticalAlign: "middle",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  };
+function LeaderboardRowView({
+  rank,
+  row,
+  isMine,
+  faded,
+}: {
+  rank: number | null;
+  row: LeaderboardRow;
+  isMine: boolean;
+  faded?: boolean;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const podiumBg =
+    rank === 1
+      ? "color-mix(in srgb, var(--podium-gold) 18%, transparent)"
+      : rank === 2
+        ? "color-mix(in srgb, var(--podium-silver) 22%, transparent)"
+        : rank === 3
+          ? "color-mix(in srgb, var(--podium-bronze) 18%, transparent)"
+          : "var(--surface-2)";
+  const podiumColor =
+    rank === 1
+      ? "var(--podium-gold)"
+      : rank === 2
+        ? "var(--podium-silver)"
+        : rank === 3
+          ? "var(--podium-bronze)"
+          : "var(--text-muted)";
+  const teamLabel = row.players.map(fullName).join(" + ");
+  const firstPlayer = row.players[0];
+  return (
+    <ListRow
+      bordered
+      selected={isMine}
+      style={faded ? { opacity: 0.7 } : undefined}
+      leading={
+        <span
+          aria-hidden="true"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 36,
+            height: 36,
+            borderRadius: "var(--radius-pill)",
+            background: podiumBg,
+            color: podiumColor,
+            fontWeight: "var(--weight-bold)",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {rank === 1 || rank === 2 || rank === 3 ? (
+            <Crown size={18} fill="currentColor" />
+          ) : rank !== null ? (
+            rank
+          ) : (
+            "·"
+          )}
+        </span>
+      }
+      primary={teamLabel}
+      secondary={
+        <Inline gap="sm" align="center">
+          <span>
+            {t("live.col.played")}: <strong>{row.matches}</strong>
+          </span>
+          <span>·</span>
+          <span>
+            {t("live.col.wins")}: <strong>{row.wins}</strong>
+          </span>
+          <span>·</span>
+          <span style={{ fontVariantNumeric: "tabular-nums" }}>
+            {row.setsFor}-{row.setsAgainst}
+          </span>
+        </Inline>
+      }
+      trailing={
+        firstPlayer ? (
+          <Avatar
+            id={firstPlayer.userId}
+            name={fullName(firstPlayer)}
+            size={28}
+          />
+        ) : null
+      }
+    />
+  );
 }
 
-const cardStyle: CSSProperties = {
-  border: "1px solid var(--tg-theme-section-separator-color, #e5e5e5)",
-  borderRadius: 10,
-  padding: 12,
-};
-
-const sectionTitle: CSSProperties = {
-  fontSize: 15,
-  margin: "0 0 8px 0",
-  textTransform: "uppercase",
-  letterSpacing: 0.5,
-  opacity: 0.8,
-};
-
-const btnBase: CSSProperties = {
-  padding: "10px 16px",
-  border: "none",
-  borderRadius: 8,
-  cursor: "pointer",
-  fontSize: 16,
-};
-
-const btnPrimary: CSSProperties = {
-  ...btnBase,
-  background: "var(--tg-theme-button-color, #2ea6ff)",
-  color: "var(--tg-theme-button-text-color, #fff)",
-};
-
-const btnDanger: CSSProperties = {
-  ...btnBase,
-  background: "var(--tg-theme-destructive-text-color, #c0392b)",
-  color: "#fff",
-};
-
-const btnSmall: CSSProperties = {
-  ...btnBase,
-  padding: "6px 12px",
-  fontSize: 14,
-};
-
-const btnSmallDanger: CSSProperties = {
-  ...btnSmall,
-  background: "var(--tg-theme-destructive-text-color, #c0392b)",
-  color: "#fff",
-};
-
-const listRow: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "6px 0",
-  borderBottom: "1px solid var(--tg-theme-section-separator-color, #eee)",
-};
-
-const inputStyle: CSSProperties = {
-  padding: "10px 12px",
-  border: "1px solid var(--tg-theme-section-separator-color, #ccc)",
-  borderRadius: 8,
-  fontSize: 16,
-  background: "var(--tg-theme-bg-color, #fff)",
-  color: "var(--tg-theme-text-color, #000)",
+// Inline text-input style for the few places that still need a real <input>.
+const textInputStyle: CSSProperties = {
+  padding: "var(--space-3) var(--space-4)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-md)",
+  fontSize: "var(--font-md)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  minHeight: "var(--tap-min)",
+  width: "100%",
 };

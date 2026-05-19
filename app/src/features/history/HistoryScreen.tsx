@@ -1,6 +1,18 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Calendar, Crown, History, Medal, Trophy } from "lucide-react";
 import { api, ApiClientError } from "../../apiClient";
+import {
+  Avatar,
+  Badge,
+  Card,
+  EmptyState,
+  Inline,
+  ListRow,
+  SectionTitle,
+  Spinner,
+  Stack,
+} from "../../ui";
 
 interface PodiumPlayer {
   userId: string;
@@ -49,17 +61,35 @@ export function HistoryScreen(): JSX.Element {
     void reload();
   }, [reload]);
 
-  if (loading) return <p>…</p>;
-  if (error) {
+  if (loading) {
     return (
-      <p style={{ color: "var(--tg-theme-destructive-text-color, #c00)" }}>
-        {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
-      </p>
+      <Inline justify="center" style={{ padding: "var(--space-5)" }}>
+        <Spinner size={28} />
+      </Inline>
     );
   }
-  if (items.length === 0) {
-    return <p style={{ opacity: 0.7 }}>{t("history.empty")}</p>;
+
+  if (error) {
+    return (
+      <Card>
+        <p style={{ color: "var(--danger)" }}>
+          {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
+        </p>
+      </Card>
+    );
   }
+
+  if (items.length === 0) {
+    return (
+      <Card>
+        <EmptyState
+          icon={<History size={32} />}
+          title={t("history.empty")}
+        />
+      </Card>
+    );
+  }
+
   const dateFmt = new Intl.DateTimeFormat(i18n.language, {
     year: "numeric",
     month: "short",
@@ -67,56 +97,127 @@ export function HistoryScreen(): JSX.Element {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <Stack gap="md">
       {items.map((item) => (
-        <section key={item.id} style={cardStyle}>
-          <header
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              marginBottom: 8,
-            }}
-          >
-            <h3 style={{ fontSize: 15, margin: 0 }}>{item.name}</h3>
-            {item.endedAt && (
-              <span style={{ fontSize: 12, opacity: 0.7 }}>
-                {dateFmt.format(new Date(item.endedAt))}
-              </span>
-            )}
-          </header>
-          {item.podium.length === 0 ? (
-            <p style={{ opacity: 0.6, fontSize: 13, margin: 0 }}>
-              {t("history.noResults")}
-            </p>
-          ) : (
-            <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14 }}>
-              {item.podium.map((p) => (
-                <li key={p.teamId}>
-                  {medalFor(p.rank)}{" "}
-                  {p.players.map((u) => u.displayName).join(" + ")}
-                  <span style={{ opacity: 0.7, marginLeft: 8, fontSize: 12 }}>
-                    {p.wins}W–{p.losses}L
+        <Card key={item.id}>
+          <Inline justify="space-between" align="flex-start" gap="sm">
+            <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+              <h3
+                style={{
+                  fontSize: "var(--font-md)",
+                  fontWeight: "var(--weight-bold)",
+                  wordBreak: "break-word",
+                }}
+              >
+                {item.name}
+              </h3>
+              {item.endedAt ? (
+                <Inline gap="xs" align="center">
+                  <Calendar size={12} color="var(--text-muted)" />
+                  <span
+                    style={{
+                      fontSize: "var(--font-xs)",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    {dateFmt.format(new Date(item.endedAt))}
                   </span>
-                </li>
-              ))}
-            </ol>
+                </Inline>
+              ) : null}
+            </Stack>
+            <Badge variant="neutral" size="sm">
+              {t("tournament.status.ended")}
+            </Badge>
+          </Inline>
+
+          {item.podium.length === 0 ? (
+            <div style={{ marginTop: "var(--space-3)" }}>
+              <EmptyState
+                icon={<Trophy size={24} />}
+                title={t("history.noResults")}
+              />
+            </div>
+          ) : (
+            <div style={{ marginTop: "var(--space-3)" }}>
+              <SectionTitle>{t("live.leaderboard")}</SectionTitle>
+              <Stack gap="xs">
+                {item.podium.map((p) => (
+                  <PodiumRow key={p.teamId} entry={p} />
+                ))}
+              </Stack>
+            </div>
           )}
-        </section>
+        </Card>
       ))}
-    </div>
+    </Stack>
   );
 }
 
-function medalFor(rank: number): string {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return `#${rank}`;
+function PodiumRow({ entry }: { entry: PodiumEntry }): JSX.Element {
+  const medalBg =
+    entry.rank === 1
+      ? "color-mix(in srgb, var(--podium-gold) 18%, transparent)"
+      : entry.rank === 2
+        ? "color-mix(in srgb, var(--podium-silver) 22%, transparent)"
+        : entry.rank === 3
+          ? "color-mix(in srgb, var(--podium-bronze) 18%, transparent)"
+          : "var(--surface-2)";
+  const medalColor =
+    entry.rank === 1
+      ? "var(--podium-gold)"
+      : entry.rank === 2
+        ? "var(--podium-silver)"
+        : entry.rank === 3
+          ? "var(--podium-bronze)"
+          : "var(--text-muted)";
+  const firstPlayer = entry.players[0];
+  const label = entry.players.map((u) => u.displayName).join(" + ");
+  return (
+    <ListRow
+      bordered
+      leading={
+        <span
+          aria-hidden="true"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 36,
+            height: 36,
+            borderRadius: "var(--radius-pill)",
+            background: medalBg,
+            color: medalColor,
+          }}
+        >
+          {entry.rank <= 3 ? (
+            entry.rank === 1 ? (
+              <Crown size={18} fill="currentColor" />
+            ) : (
+              <Medal size={18} fill="currentColor" />
+            )
+          ) : (
+            <span
+              style={{
+                fontWeight: "var(--weight-bold)",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {entry.rank}
+            </span>
+          )}
+        </span>
+      }
+      primary={label}
+      secondary={`${entry.wins}W – ${entry.losses}L`}
+      trailing={
+        firstPlayer ? (
+          <Avatar
+            id={firstPlayer.userId}
+            name={firstPlayer.displayName}
+            size={28}
+          />
+        ) : null
+      }
+    />
+  );
 }
-
-const cardStyle: CSSProperties = {
-  border: "1px solid var(--tg-theme-section-separator-color, #e5e5e5)",
-  borderRadius: 10,
-  padding: 12,
-};

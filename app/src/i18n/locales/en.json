@@ -91,6 +91,7 @@
     "nooneLooking": "No one else is looking for a partner yet.",
     "pair": "Pair up",
     "pairWith": "Pair up with {{name}}",
+    "lastPartner": "Last partner",
     "confirmPair": "Pair up with {{name}}?",
     "leave": "Leave team",
     "leaveConfirm": "Leave the team ({{name}})? Both of you will go back to the looking-for-teammate list."

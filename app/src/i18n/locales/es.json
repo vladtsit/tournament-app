@@ -91,6 +91,7 @@
     "nooneLooking": "Aún nadie más busca compañero.",
     "pair": "Emparejar",
     "pairWith": "Emparejar con {{name}}",
+    "lastPartner": "Última pareja",
     "confirmPair": "¿Emparejarte con {{name}}?",
     "leave": "Salir del equipo",
     "leaveConfirm": "¿Salir del equipo ({{name}})? Ambos volveréis a la lista de jugadores que buscan compañero."

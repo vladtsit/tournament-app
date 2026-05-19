@@ -81,6 +81,8 @@ export interface TelegramWebApp {
   CloudStorage: CloudStorage;
   setHeaderColor(color: string): void;
   setBackgroundColor(color: string): void;
+  onEvent(event: string, cb: () => void): void;
+  offEvent(event: string, cb: () => void): void;
 }
 
 declare global {
@@ -162,3 +164,29 @@ export const haptic = {
     }
   },
 };
+
+/**
+ * Propagate the current Telegram color scheme onto the root element so the
+ * design-token stylesheet can switch between light and dark variants
+ * (`[data-tg-color-scheme="dark"]`). Subscribes to `themeChanged` so toggling
+ * the system theme inside Telegram is reflected live.
+ *
+ * Safe to call multiple times; safe outside Telegram (defaults to light).
+ */
+export function applyTelegramColorScheme(): void {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const wa = getWebApp();
+  const apply = (): void => {
+    const scheme = wa?.colorScheme ?? "light";
+    root.dataset["tgColorScheme"] = scheme;
+  };
+  apply();
+  if (wa?.onEvent) {
+    try {
+      wa.onEvent("themeChanged", apply);
+    } catch {
+      // ignore — older Telegram clients may not expose onEvent
+    }
+  }
+}
