@@ -48,10 +48,8 @@
     "not_registered": "Mark yourself as playing first.",
     "partner_is_self": "Pick someone else as a partner.",
     "idempotency_conflict": "Conflicting request — please retry.",
-    "invalid_set_count": "A match must have 2 or 3 sets.",
-    "invalid_set_score": "Invalid set score.",
-    "invalid_super_tiebreak": "Super tie-break must be won by 10+ with a 2-point lead.",
-    "no_winner": "No winner — one team must win 2 sets.",
+    "invalid_set_count": "Enter a game score.",
+    "invalid_set_score": "Scores must differ — one team has to win.",
     "missing_opponent": "Pick an opponent first.",
     "self_opponent": "You can't play against yourself.",
     "tournament_not_live": "Tournament isn't live yet.",
@@ -137,7 +135,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "resolveConfirm": "Mark confirmed",
-    "editPrompt": "Enter sets as e.g. 6-4,3-6,10-7",
+    "editPrompt": "Enter the game score, e.g. 6-4",
     "deleteConfirm": "Delete this match ({{score}})? This cannot be undone.",
     "exportBbq": "Export BBQ (CSV)",
     "exportResults": "Export results (CSV)",
@@ -164,7 +162,7 @@
       },
       "live": {
         "title": "During a live tournament",
-        "body": "When the admin starts the tournament, the Submit-a-match form appears. Pick the opposing team, type each set’s score, then tap the Telegram main button (or Submit). At least one valid set is required."
+        "body": "When the admin starts the tournament, the Submit-a-match form appears. Pick the opposing team, type the game score (e.g. 6-4 or 11-8), then tap the Telegram main button (or Submit). One score pair per record — if you play several games, submit one record per game."
       },
       "matches": {
         "title": "Confirm and dispute",
@@ -172,7 +170,7 @@
       },
       "leaderboard": {
         "title": "Leaderboard",
-        "body": "Teams need a few matches to be ranked (your group’s admin sets the minimum). Ranking uses win rate, then set ratio, then game ratio."
+        "body": "Teams need a few matches to be ranked (your group’s admin sets the minimum). Ranking uses win rate, then game ratio, then matches played."
       },
       "history": {
         "title": "History tab",

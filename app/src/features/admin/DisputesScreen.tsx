@@ -120,22 +120,24 @@ export function DisputesScreen({ tournamentId, onClose }: Props): JSX.Element {
   const editMatch = useCallback(
     async (m: MatchRow): Promise<void> => {
       if (typeof window === "undefined") return;
-      const current = m.sets.map((s) => `${s.a}-${s.b}`).join(",");
+      const first = m.sets[0];
+      const current = first ? `${first.a}-${first.b}` : "";
       const raw = window.prompt(t("admin.editPrompt"), current);
       if (raw === null) return;
       const trimmed = raw.trim();
       if (!trimmed) return;
-      const sets: Array<{ a: number; b: number }> = [];
-      for (const part of trimmed.split(/[,\s]+/)) {
-        if (!part) continue;
-        const mm = /^(\d+)[-:](\d+)$/.exec(part);
-        if (!mm) {
-          setError("invalid_set_score");
-          return;
-        }
-        sets.push({ a: Number(mm[1]), b: Number(mm[2]) });
+      const mm = /^(\d+)[-:](\d+)$/.exec(trimmed);
+      if (!mm) {
+        setError("invalid_set_score");
+        return;
       }
-      if (sets.length === 0) return;
+      const a = Number(mm[1]);
+      const b = Number(mm[2]);
+      if (a === b) {
+        setError("invalid_set_score");
+        return;
+      }
+      const sets: Array<{ a: number; b: number }> = [{ a, b }];
       setBusy(true);
       setError(null);
       try {

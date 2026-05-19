@@ -1182,18 +1182,23 @@ Optional later feature:
 
 ## 17. Result Recording Flow
 
-### 17.1 Submit result (padel best-of-3 sets)
+### 17.1 Submit result (casual padel — one game per record)
 
-The submitter enters set scores. The frontend's `BottomActionButton` is the only submit affordance.
+> **Casual scoring (v2.2):** to keep the app friendly for pickup play, each
+> match record represents a **single game** with one score pair. Any pair of
+> non-negative integers is accepted as long as `a !== b` (and both ≤ 99 as a
+> typo guard). Teams that play multiple games against each other simply submit
+> multiple records — each one counts independently toward wins/losses and the
+> overall game totals.
+
+The submitter enters one score pair. The frontend's `BottomActionButton` is the only submit affordance.
 
 ```text
 Enter result
 
 Opponent:  Dani / Pablo
 
-Set 1:  [-] 6 [+]   [-] 4 [+]
-Set 2:  [-] 4 [+]   [-] 6 [+]
-Set 3:  [-] 7 [+]   [-] 5 [+]   (optional)
+Score:  [-] 6 [+]   [-] 4 [+]
 
 [Submit result]   ← Telegram BottomButton
 ```
@@ -1203,9 +1208,9 @@ Client sends an `Idempotency-Key` header (UUID generated when the form mounts). 
 ### 17.2 Server-side rules
 
 - Submitter must be on `teamA` or `teamB` (otherwise 403).
-- **Valid padel set** (from either side's perspective): `(winner = 6, loser ∈ {0..4})` OR `(winner = 7, loser ∈ {5, 6})` OR — for the **deciding set only**, if `groups.settings.tiebreakRule = 'super_tiebreak_to_10'` — `(winner ≥ 10, winner − loser ≥ 2)`.
-- `groups.settings.tiebreakRule` defaults to `'super_tiebreak_to_10'`; alternative `'full_third_set'` enforces a normal third set.
-- Match winner = first team to win 2 sets. Server computes and stores `winnerTeamId`; rejects with `validation` if no team has 2 sets.
+- **Valid score**: `sets.length === 1`, with `a` and `b` non-negative integers, `a !== b`, both `≤ 99`. Failures return `400 invalid_set_count` (wrong array length) or `400 invalid_set_score` (bad values).
+- Match winner = side with the higher score in the single submitted game.
+- `groups.settings.tiebreakRule` is retained on existing documents but is **ignored** by the scoring engine. New tournaments do not depend on it.
 - Status starts as `submitted` and **counts immediately** in the leaderboard.
 - A 30-minute auto-confirm timer (`autoConfirmAt` field, polled by a 1-min Functions Timer trigger) flips status to `confirmed` if no dispute by then.
 
@@ -1214,7 +1219,7 @@ Client sends an `Idempotency-Key` header (UUID generated when the form mounts). 
 Opponent sees:
 
 ```text
-Vlad / Alex   6-4 · 4-6 · 7-5   Dani / Pablo
+Vlad / Alex   6-4   Dani / Pablo
 
 [Confirm]   [Dispute]
 ```

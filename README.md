@@ -4,6 +4,8 @@ Multi-tenant Telegram Mini App for organising casual pádel tournaments.
 
 **Stack:** Vanilla React 18 + Vite 5 (TS) · Azure Static Web Apps (Free) · Managed Azure Functions v4 (Node 22 TS) · Azure Cosmos DB for NoSQL (Free Tier, shared-throughput DB).
 
+**Status:** Phases 0–5 shipped; Phase 5.5 pre-preview hardening shipped (opposing-team match confirm, retry-safe idempotency, `Retry-After` on 429, silent JWT refresh, Telegram fetch timeout). Ready for closed preview testing in a real Telegram group. Roadmap: [docs/implementation_plan.md](docs/implementation_plan.md).
+
 Full requirements: [padel_telegram_mini_app_requirements.md](padel_telegram_mini_app_requirements.md).
 
 ## Layout

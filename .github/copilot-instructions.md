@@ -50,11 +50,12 @@ Cost target: **$0/month** at low volume. Do not propose changes that violate thi
 - **Secrets**: never hardcode. Read from `process.env`. Production uses Key Vault references; locally uses `api/local.settings.json` (gitignored).
 - Never log `initData`, JWTs, bot tokens, or full Cosmos documents containing user data.
 
-## Padel scoring (spec §17)
+## Padel scoring (spec §17, casual mode v2.2)
 
-- Best-of-3 sets; sets stored as `[{a:number, b:number}, …]`.
-- Valid set: `(winner=6, loser∈0..4)` ∨ `(winner=7, loser∈{5,6})` ∨ deciding super-tiebreak `≥10` with lead `≥2`.
-- The third set may be a regular set or a super-tiebreak — controlled by `groups.settings.tiebreakRule` (`"regular_set" | "super_tiebreak_to_10"`).
+- Casual padel: one record = one game. Sets stored as `[{a:number, b:number}]` of length 1.
+- Valid score: `a`/`b` non-negative integers, both ≤ 99, `a !== b`. Errors: `invalid_set_count` / `invalid_set_score`.
+- Teams may submit multiple records against the same opponent; each one counts independently.
+- `groups.settings.tiebreakRule` is retained for back-compat but **ignored** by the scoring engine.
 - Overall-score points per spec §13.2: podium **10 / 7 / 5 / 3 / 1** + `0.25 × wins`.
 
 ## Telegram specifics (spec §5, §9)

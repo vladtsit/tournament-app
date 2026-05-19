@@ -11,7 +11,6 @@ import {
 import { autoConfirmDueAt, type MatchDoc } from "../shared/matches.js";
 import {
   evaluateMatch,
-  normalizeTiebreakRule,
   ScoringError,
   type SetScore,
 } from "../shared/scoring.js";
@@ -29,7 +28,6 @@ interface TournamentDoc {
   id: string;
   groupId: string;
   status: "draft" | "registration_open" | "live" | "ended";
-  settings: { tiebreakRule?: string };
 }
 
 interface TeamSlotDoc {
@@ -41,11 +39,6 @@ interface TeamDoc {
   tournamentId: string;
   groupId: string;
   status?: "active" | "disbanded";
-}
-
-interface GroupDoc {
-  id: string;
-  settings?: { tiebreakRule?: string };
 }
 
 app.http("matchSubmit", {
@@ -83,18 +76,13 @@ app.http("matchSubmit", {
 
     const idemKey = req.headers.get("idempotency-key");
 
-    // Load tournament + group settings + caller's team + opponent team in parallel.
+    // Load tournament + caller's team + opponent team in parallel.
     const slotId = `${tournamentId}_${ctx.userId}`;
-    const [tRead, gRead, slotRead, oppRead] = await Promise.all([
+    const [tRead, slotRead, oppRead] = await Promise.all([
       containers_
         .tournaments()
         .item(tournamentId, ctx.groupId)
         .read<TournamentDoc>()
-        .catch(() => null),
-      containers_
-        .groups()
-        .item(ctx.groupId, ctx.groupId)
-        .read<GroupDoc>()
         .catch(() => null),
       containers_
         .teamSlots()
@@ -131,13 +119,9 @@ app.http("matchSubmit", {
       return jsonError(404, "opponent_not_found", "Opponent team not found.");
     }
 
-    const tiebreakRule = normalizeTiebreakRule(
-      t.settings?.tiebreakRule ?? gRead?.resource?.settings?.tiebreakRule,
-    );
-
     let outcome;
     try {
-      outcome = evaluateMatch(setsInput, tiebreakRule);
+      outcome = evaluateMatch(setsInput);
     } catch (err) {
       if (err instanceof ScoringError) {
         return jsonError(400, err.code, err.message);

@@ -178,7 +178,7 @@ Goal: admin starts the tournament; teams set availability; players submit padel 
 2. **State transition** `registration_open → live` via admin endpoint; render live-phase pinned message.
 3. **Team status** `POST /api/teams/{id}/status` (`available|resting|stopped`).
 4. **Opponents list** `GET /api/tournaments/{id}/available-opponents` (excludes self team, ordered by least-played).
-5. **Match submit** `POST /api/tournaments/{id}/matches` — requires `Idempotency-Key`; validates submitter is on one of the teams; validates padel set rules per spec §17 + `groups.settings.tiebreakRule`; warns (not blocks) if same pair played within 20 min.
+5. **Match submit** `POST /api/tournaments/{id}/matches` — requires `Idempotency-Key`; validates submitter is on one of the teams; validates casual scoring per spec §17 (one game per record, `a !== b`, both ≤ 99); warns (not blocks) if same pair played within 20 min.
 6. **Confirm / dispute** `POST /api/matches/{id}/confirm|dispute` with `If-Match` ETag; background timer auto-confirms after 30 min via the existing webhook function (no Timer trigger needed on Free tier — piggy-back on next read using a lazy reconciliation pattern).
 7. **Live leaderboard** `GET /api/tournaments/{id}/leaderboard` — min-matches gate from settings; pts/match + W/L + diff.
 8. **SPA features**: `features/matches/`, `features/leaderboard/`, opponent finder UI, score entry stepper with BottomButton.
@@ -268,7 +268,7 @@ Localization is MVP scope (overrides spec §27.3 which listed it as "later"). Bu
 
 ---
 
-## Phase 5 — Polish 🟡 (in progress)
+## Phase 5 — Polish ✅ (shipped)
 
 Goal: ship-quality UX, admin tooling, exports, light telemetry.
 
@@ -277,7 +277,7 @@ Goal: ship-quality UX, admin tooling, exports, light telemetry.
 - ✅ Telegram **HapticFeedback** on create / register / start / end / pair / submit / confirm / dispute / tab-switch (`telegram.haptic.{impact,notify,selection}`).
 - ✅ **BackButton** wired on non-current tabs (`hooks/useBackButton.ts`).
 - ✅ **CloudStorage** persistence of last-used tab (key `lastTab`).
-- ✅ **Rate limiting**: `shared/rateLimit.ts` — 30 mutating requests / 60s per user, in-memory; auto-enforced inside `requireAuth` for POST/PUT/PATCH/DELETE; surfaces HTTP 429 with `error.code='rate_limited'` and `retryAfterSec` hint via `mapGroupContextError`. i18n key `errors.rate_limited` in en/es/ru.
+- ✅ **Rate limiting**: `shared/rateLimit.ts` — 30 mutating requests / 60s per user, in-memory; auto-enforced inside `requireAuth` for POST/PUT/PATCH/DELETE; HTTP 429 carries `Retry-After` header + JSON `error.retryAfterSec` (see Phase 5.5). i18n key `errors.rate_limited` in en/es/ru.
 - ✅ **CloudStorage** persistence: `lastTab` (active tab) and `lastPartner_{groupId}` (recommended teammate). `lastOpponent_{tournamentId}` intentionally dropped — opponent selection is short, transient, and per-tournament; persisting it would surface stale teams across matches.
 - ✅ **MainButton** integration across all primary flows: create tournament, start tournament, end tournament (admin without team), pair teammate, submit match. Conditions are mutually exclusive so only one is bound at any time.
 - ✅ **Admin dashboard polish**: counts banner (teams + match status counts), `PATCH /api/matches/{id}` (admin edit + resolve dispute), `DELETE /api/matches/{id}` (admin remove), and a dedicated **Disputes admin sub-screen** (full-page overlay with BackButton) opened from the admin overview card.
@@ -286,26 +286,68 @@ Goal: ship-quality UX, admin tooling, exports, light telemetry.
 - ✅ **In-app Help** (`?` button → `HelpScreen`) with 11 localised sections (intro / registration / pairing / live / matches / leaderboard / history / overall / admin / language / privacy) in en/es/ru.
 - ✅ **README + ops docs**: `README.md` links to `docs/operations.md`, which covers webhook (re-)registration, secret rotation, group/admin management, App Insights enablement, CSV exports, and useful Cosmos one-liners.
 
-**Steps**
-
-1. **Telegram UI primitives** across all flows: `MainButton`/`BottomButton`, `BackButton`, `HapticFeedback` per spec §11.
-2. **CloudStorage** for last group / last teammate / last opponent (spec §11).
-3. **Admin dashboard polish**: counts, edit/delete result, dispute queue.
-4. **Exports**: `GET /api/admin/bbq-export` (CSV), `GET /api/admin/results-export` (CSV).
-5. **Rate limiting** middleware on POST endpoints (30/min per user + per IP).
-6. **App Insights free-tier** wiring (1 GB/month cap): connection string in app settings, structured logs (never log `initData`, JWTs, tokens).
-7. **README + ops docs**: webhook re-registration, secret rotation, "how to add a group".
-
-**Relevant files**
-
-- `app/src/features/admin/`, shared components `BottomActionButton.tsx`, `BackButton.tsx`.
-- `api/src/functions/admin*.ts`, `api/src/shared/rateLimit.ts`.
-
 **Verification**
 
 1. UX walkthrough on a real Android + iOS Telegram client.
 2. Rate-limit test: 31st POST/min returns 429 with `Retry-After`.
 3. App Insights shows requests + auth-failure counter; daily ingestion stays < 30 MB at idle.
+
+---
+
+## Phase 5.5 — Pre-preview hardening ✅ (shipped)
+
+Goal: close the correctness and resilience gaps surfaced by the pre-launch
+code review (May 2026) so the app is safe to expose to real preview users.
+
+**Status (shipped, commit `25f9fe9`)**
+
+- ✅ **Opposing-team match confirmation** (`functions/matchConfirm.ts`, `shared/matches.ts`, `functions/matchSubmit.ts`): every match now persists `submittedByTeamId` at submit time; confirm requires `myTeamId !== submittedByTeamId` so the submitter's **partner** can no longer rubber-stamp their own team's result. Legacy docs without the field fall back to the old user-id check.
+- ✅ **Retry-safe `Idempotency-Key`s in the SPA** (`features/tournament/TournamentScreen.tsx`): registration / pairing / leave-team / match-submit keys now use `crypto.randomUUID()` per user intent instead of `Date.now()`. Combined with the apiClient 401 retry below, retries hit the stored idempotency record instead of creating duplicate writes.
+- ✅ **`player_stats` double-apply guard** (`shared/playerStats.ts`, `functions/tournamentEnd.ts`): `applyPlayerDeltas` takes `tournamentId` and writes `lastAppliedTournamentId` on each row; rows whose marker matches are skipped, so a retry after a partial `tournamentEnd` failure no longer double-counts podium points.
+- ✅ **`Retry-After` HTTP header on 429** (`shared/requireGroup.ts`): `mapGroupContextError` now returns a full `HttpResponseInit` and sets the `Retry-After` header (plus `error.retryAfterSec` in the JSON body) when the rate limiter trips. All 20 endpoint handlers simplified to `return mapGroupContextError(err);`.
+- ✅ **Silent JWT refresh on 401** (`apiClient.ts`, `hooks/useTelegramAuth.ts`): `setReauthHandler` lets the apiClient re-run `/api/auth/telegram` (with the remembered `lastGroupId`) on a single `401 invalid_token | missing_token`, then retries the original request once with the same headers (including `Idempotency-Key`). Deduped via an inflight promise so concurrent 401s share one re-auth. Fixes the silent dead-end users would otherwise hit after the 4h JWT TTL.
+- ✅ **Outbound Telegram fetch timeout** (`shared/telegramApi.ts`): every `bot/<method>` call now wraps `fetch` in an `AbortController` with an 8s ceiling; aborted calls surface as `TelegramApiError(method, 408, "timeout")` so a hung Telegram round-trip can no longer stall a Functions invocation.
+
+**Verification**
+
+1. `npm run typecheck && npm run lint && npm run build` — all green.
+2. Two-player team: partner can no longer confirm a match their teammate submitted (server returns 403 `cannot_confirm_own_submission`).
+3. Double-tapping "Submit match" yields exactly one match doc (replay → 200 with the original record).
+4. After the JWT TTL elapses, the next API call transparently re-auths and succeeds; user sees no error.
+5. Triggering the rate limit returns `HTTP 429`, `Retry-After: <n>`, JSON `error.retryAfterSec === <n>`.
+
+---
+
+## Phase 5.6 — Casual scoring relaxation ✅ (shipped)
+
+Goal: padel preview testers reported the strict 6/7-set and super-tiebreak
+validators rejected friendly pickup scores (e.g. `9-7`, `6-5`). Relax the
+scoring engine to "casual mode": one record = one game with a single score
+pair, `a !== b`, both non-negative integers ≤ 99. Teams that play multiple
+games against each other submit multiple records — each counts independently.
+
+**Status (shipped)**
+
+- ✅ **Scoring engine rewrite** (`shared/scoring.ts`): `evaluateMatch` now accepts exactly one `SetScore`, validates `Number.isInteger`, range `[0, 99]`, `a !== b`, and returns `winner`/`setsA`/`setsB`/`gamesA`/`gamesB` directly. `ScoringError` codes reduced to `invalid_set_count` and `invalid_set_score`; `invalid_super_tiebreak` and `no_winner` removed. `normalizeTiebreakRule` retained as a no-op for back-compat with stored settings.
+- ✅ **Leaderboard tiebreak update** (`shared/scoring.ts` `aggregateLeaderboard`): drop `setRatio` from the comparator (it equals `winRate` under one-record-per-game). New sort key: `winRate desc → gameRatio desc → matches desc → teamId asc`. `setRatio` is still computed on each row for back-compat with the SPA.
+- ✅ **Endpoints simplified** (`functions/matchSubmit.ts`, `functions/matchAdminEdit.ts`): dropped the `tiebreakRule` Cosmos read on submit/edit (saves one point-read per submit), call `evaluateMatch(sets)` with no rule argument.
+- ✅ **SPA score entry** (`features/tournament/TournamentScreen.tsx` `LiveSection`): replaced 3 set rows + 6 state fields with a single `<SetScoreInput>` and `scoreA`/`scoreB` pair. Client-side guard rejects `a === b` before submitting. Admin edit prompt (`adminEditMatch`) and `DisputesScreen.editMatch` switched to a single `"a-b"` prompt.
+- ✅ **i18n updated** (`app/src/i18n/locales/{en,es,ru}.json`): rewrote `errors.invalid_set_count` and `errors.invalid_set_score` copy; removed `errors.invalid_super_tiebreak` and `errors.no_winner`.
+- ✅ **Docs amended**: spec §17 rewritten for casual mode; `.github/copilot-instructions.md` "Padel scoring" section updated.
+
+**Backward compatibility**
+
+- Legacy match docs (2–3 sets stored from before this phase) keep their `winner` / `setsA` / `setsB` / `gamesA` / `gamesB` and continue to aggregate correctly into the leaderboard.
+- `groups.settings.tiebreakRule` and `tournaments.settings.tiebreakRule` are still written by `tournamentCreate` / `telegramWebhook` but are ignored at read time. No data migration required.
+
+**Verification**
+
+1. `npm run typecheck && npm run lint && npm run build` — all green.
+2. `POST /api/tournaments/{id}/matches` with `{ sets: [{a:6,b:4}] }` → 201 with `winner=A`, `gamesA=6`, `gamesB=4`.
+3. `{ sets: [{a:11,b:8}] }` → 201 (previously rejected as invalid set).
+4. `{ sets: [{a:5,b:5}] }` → 400 `invalid_set_score`.
+5. `{ sets: [] }` or 2+ entries → 400 `invalid_set_count`.
+6. Existing legacy 2/3-set match docs still appear correctly in the leaderboard.
 
 ---
 

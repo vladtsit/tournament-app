@@ -897,13 +897,10 @@ function LiveSection({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Set scores as `number | ""` so the SetScoreInput stepper integrates cleanly.
-  const [s1a, setS1a] = useState<number | "">("");
-  const [s1b, setS1b] = useState<number | "">("");
-  const [s2a, setS2a] = useState<number | "">("");
-  const [s2b, setS2b] = useState<number | "">("");
-  const [s3a, setS3a] = useState<number | "">("");
-  const [s3b, setS3b] = useState<number | "">("");
+  // Casual padel: a single game score per record. Stored as `number | ""`
+  // so the SetScoreInput stepper integrates cleanly.
+  const [scoreA, setScoreA] = useState<number | "">("");
+  const [scoreB, setScoreB] = useState<number | "">("");
   const [opponentId, setOpponentId] = useState("");
   const [showDisputes, setShowDisputes] = useState(false);
 
@@ -941,20 +938,15 @@ function LiveSection({
       setError("missing_opponent");
       return;
     }
-    const sets: Array<{ a: number; b: number }> = [];
-    const triples: Array<[number | "", number | ""]> = [
-      [s1a, s1b],
-      [s2a, s2b],
-      [s3a, s3b],
-    ];
-    for (const [a, b] of triples) {
-      if (a === "" && b === "") continue;
-      if (typeof a !== "number" || typeof b !== "number") {
-        setError("invalid_set_score");
-        return;
-      }
-      sets.push({ a, b });
+    if (typeof scoreA !== "number" || typeof scoreB !== "number") {
+      setError("invalid_set_count");
+      return;
     }
+    if (scoreA === scoreB) {
+      setError("invalid_set_score");
+      return;
+    }
+    const sets: Array<{ a: number; b: number }> = [{ a: scoreA, b: scoreB }];
     setBusy(true);
     setError(null);
     try {
@@ -963,12 +955,8 @@ function LiveSection({
         body: { opponentTeamId: opponentId, sets },
         idempotencyKey: `match-${tournamentId}-${opponentId}-${crypto.randomUUID()}`,
       });
-      setS1a("");
-      setS1b("");
-      setS2a("");
-      setS2b("");
-      setS3a("");
-      setS3b("");
+      setScoreA("");
+      setScoreB("");
       setOpponentId("");
       haptic.notify("success");
       await reload();
@@ -978,7 +966,7 @@ function LiveSection({
     } finally {
       setBusy(false);
     }
-  }, [tournamentId, opponentId, s1a, s1b, s2a, s2b, s3a, s3b, reload]);
+  }, [tournamentId, opponentId, scoreA, scoreB, reload]);
 
   const confirmMatch = useCallback(
     async (matchId: string): Promise<void> => {
@@ -1025,22 +1013,24 @@ function LiveSection({
   const adminEditMatch = useCallback(
     async (m: MatchRow): Promise<void> => {
       if (typeof window === "undefined") return;
-      const current = m.sets.map((s) => `${s.a}-${s.b}`).join(",");
+      const first = m.sets[0];
+      const current = first ? `${first.a}-${first.b}` : "";
       const raw = window.prompt(t("admin.editPrompt"), current);
       if (raw === null) return;
       const trimmed = raw.trim();
       if (!trimmed) return;
-      const sets: Array<{ a: number; b: number }> = [];
-      for (const part of trimmed.split(/[,\s]+/)) {
-        if (!part) continue;
-        const match = /^(\d+)[-:](\d+)$/.exec(part);
-        if (!match) {
-          setError("invalid_set_score");
-          return;
-        }
-        sets.push({ a: Number(match[1]), b: Number(match[2]) });
+      const match = /^(\d+)[-:](\d+)$/.exec(trimmed);
+      if (!match) {
+        setError("invalid_set_score");
+        return;
       }
-      if (sets.length === 0) return;
+      const a = Number(match[1]);
+      const b = Number(match[2]);
+      if (a === b) {
+        setError("invalid_set_score");
+        return;
+      }
+      const sets: Array<{ a: number; b: number }> = [{ a, b }];
       setBusy(true);
       setError(null);
       try {
@@ -1107,9 +1097,9 @@ function LiveSection({
   );
 
   const hasAnySet =
-    (s1a !== "" && s1b !== "") ||
-    (s2a !== "" && s2b !== "") ||
-    (s3a !== "" && s3b !== "");
+    typeof scoreA === "number" &&
+    typeof scoreB === "number" &&
+    scoreA !== scoreB;
   const canSubmit = !!opponentId && hasAnySet && !busy;
   const inTelegram = isInTelegram();
 
@@ -1279,29 +1269,13 @@ function LiveSection({
             </div>
 
             <Stack gap="sm">
-              <SetRow
-                label={t("live.set", { n: 1 })}
-                a={s1a}
-                b={s1b}
-                onA={setS1a}
-                onB={setS1b}
+              <SetScoreInput
+                a={scoreA}
+                b={scoreB}
+                onChangeA={setScoreA}
+                onChangeB={setScoreB}
                 disabled={busy}
-              />
-              <SetRow
-                label={t("live.set", { n: 2 })}
-                a={s2a}
-                b={s2b}
-                onA={setS2a}
-                onB={setS2b}
-                disabled={busy}
-              />
-              <SetRow
-                label={t("live.set", { n: 3 })}
-                a={s3a}
-                b={s3b}
-                onA={setS3a}
-                onB={setS3b}
-                disabled={busy}
+                max={99}
               />
             </Stack>
 
@@ -1578,44 +1552,6 @@ function MetricStat({
         {label}
       </span>
     </div>
-  );
-}
-
-function SetRow({
-  label,
-  a,
-  b,
-  onA,
-  onB,
-  disabled,
-}: {
-  label: string;
-  a: number | "";
-  b: number | "";
-  onA: (v: number | "") => void;
-  onB: (v: number | "") => void;
-  disabled: boolean;
-}): JSX.Element {
-  return (
-    <Inline gap="md" justify="space-between" align="center" wrap>
-      <span
-        style={{
-          fontSize: "var(--font-sm)",
-          color: "var(--text-muted)",
-          fontWeight: "var(--weight-semibold)",
-          minWidth: 48,
-        }}
-      >
-        {label}
-      </span>
-      <SetScoreInput
-        a={a}
-        b={b}
-        onChangeA={onA}
-        onChangeB={onB}
-        disabled={disabled}
-      />
-    </Inline>
   );
 }
 

@@ -48,10 +48,8 @@
     "not_registered": "Primero marca que vas a jugar.",
     "partner_is_self": "Elige a otra persona como compañero.",
     "idempotency_conflict": "Petición conflictiva — inténtalo de nuevo.",
-    "invalid_set_count": "Un partido debe tener 2 o 3 sets.",
-    "invalid_set_score": "Resultado de set no válido.",
-    "invalid_super_tiebreak": "El super tie-break se gana a 10+ con 2 de ventaja.",
-    "no_winner": "Sin ganador — un equipo debe ganar 2 sets.",
+    "invalid_set_count": "Introduce un marcador.",
+    "invalid_set_score": "El marcador no puede ser igual — un equipo debe ganar.",
     "missing_opponent": "Elige un rival primero.",
     "self_opponent": "No puedes jugar contra ti mismo.",
     "tournament_not_live": "El torneo aún no está en juego.",
@@ -137,7 +135,7 @@
     "edit": "Editar",
     "delete": "Borrar",
     "resolveConfirm": "Marcar confirmado",
-    "editPrompt": "Ingresa los sets, ej.: 6-4,3-6,10-7",
+    "editPrompt": "Introduce el marcador, p. ej. 6-4",
     "deleteConfirm": "¿Borrar este partido ({{score}})? No se puede deshacer.",
     "exportBbq": "Exportar BBQ (CSV)",
     "exportResults": "Exportar resultados (CSV)",
@@ -164,7 +162,7 @@
       },
       "live": {
         "title": "Durante un torneo en vivo",
-        "body": "Cuando el admin inicia el torneo aparece el formulario de partido. Elige al rival, escribe el marcador de cada set y pulsa el botón principal de Telegram (o Enviar). Se requiere al menos un set válido."
+        "body": "Cuando el admin inicia el torneo aparece el formulario de partido. Elige al rival, escribe el marcador del juego (p. ej. 6-4 u 11-8) y pulsa el botón principal de Telegram (o Enviar). Un registro = un juego; si jugáis varios, enviad un registro por cada uno."
       },
       "matches": {
         "title": "Confirmar y disputar",
@@ -172,7 +170,7 @@
       },
       "leaderboard": {
         "title": "Clasificación",
-        "body": "Los equipos necesitan jugar varios partidos para entrar en la clasificación (el mínimo lo fija el admin del grupo). Se ordena por porcentaje de victorias, luego ratio de sets y luego ratio de juegos."
+        "body": "Los equipos necesitan jugar varios partidos para entrar en la clasificación (el mínimo lo fija el admin del grupo). Se ordena por porcentaje de victorias, luego ratio de juegos y luego partidos jugados."
       },
       "history": {
         "title": "Pestaña Historial",

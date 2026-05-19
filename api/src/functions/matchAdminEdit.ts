@@ -7,7 +7,6 @@ import {
 import type { MatchDoc } from "../shared/matches.js";
 import {
   evaluateMatch,
-  normalizeTiebreakRule,
   ScoringError,
   type SetScore,
 } from "../shared/scoring.js";
@@ -24,17 +23,6 @@ import { refreshPinnedMessage } from "../shared/refreshPin.js";
 interface Body {
   sets?: unknown;
   status?: unknown;
-}
-
-interface TournamentDoc {
-  id: string;
-  groupId: string;
-  settings?: { tiebreakRule?: string };
-}
-
-interface GroupDoc {
-  id: string;
-  settings?: { tiebreakRule?: string };
 }
 
 app.http("matchAdminEdit", {
@@ -86,25 +74,9 @@ app.http("matchAdminEdit", {
 
     let updated: MatchDoc = { ...match };
     if (sets) {
-      const [tRead, gRead] = await Promise.all([
-        containers_
-          .tournaments()
-          .item(match.tournamentId, ctx.groupId)
-          .read<TournamentDoc>()
-          .catch(() => null),
-        containers_
-          .groups()
-          .item(ctx.groupId, ctx.groupId)
-          .read<GroupDoc>()
-          .catch(() => null),
-      ]);
-      const rule = normalizeTiebreakRule(
-        tRead?.resource?.settings?.tiebreakRule ??
-          gRead?.resource?.settings?.tiebreakRule,
-      );
       let outcome;
       try {
-        outcome = evaluateMatch(sets, rule);
+        outcome = evaluateMatch(sets);
       } catch (err) {
         if (err instanceof ScoringError) {
           return jsonError(400, err.code, err.message);
