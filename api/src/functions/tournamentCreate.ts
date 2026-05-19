@@ -86,7 +86,7 @@ app.http("tournamentCreate", {
     };
 
     await containers_.tournaments().items.create(doc);
-    await refreshPinnedMessage(ctx.groupId, { force: true });
+    await refreshPinnedMessage(ctx.groupId);
 
     return {
       status: 201,

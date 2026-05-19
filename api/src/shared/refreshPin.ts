@@ -18,15 +18,13 @@ import {
 
 // Single entry point that recomputes the pin's contents from current Cosmos
 // state and pushes the change to Telegram. Idempotent and silent (uses
-// editMessageText, which does not trigger a chat notification).
-//
-// Honors `groups.settings.pinDebounceSeconds`: skips when called too soon
-// after the last update unless `force: true`.
+// editMessageText, which does not trigger a chat notification). Called on
+// every state change — no debounce, so the pinned message is always in sync
+// with the app numbers.
 
 interface RefreshOpts {
-  /** Skip debounce (use for explicit state transitions like /setup, start, end). */
-  force?: boolean;
-  /** Pin the message after sending (only meaningful when re-sending). */
+  /** Re-pin the message after editing/sending (idempotent — used by /setup to
+   *  recover from an admin manually unpinning the launch message). */
   pin?: boolean;
 }
 
@@ -38,11 +36,9 @@ interface GroupDoc {
   title: string;
   settings: {
     language: SupportedLanguage;
-    pinDebounceSeconds: number;
   };
   botRights?: { canPinMessages?: boolean };
   pinnedMessageId?: number;
-  lastPinUpdateAt?: string;
 }
 
 interface TournamentDoc {
@@ -71,7 +67,6 @@ export type RefreshOutcome =
   | "updated"
   | "resent"
   | "no_change"
-  | "debounced"
   | "no_group"
   | "error";
 
@@ -88,14 +83,6 @@ export async function refreshPinnedMessage(
       .catch(() => null);
     const group = groupRead?.resource;
     if (!group) return "no_group";
-
-    const debounceMs = (group.settings.pinDebounceSeconds ?? 60) * 1000;
-    const lastMs = group.lastPinUpdateAt
-      ? Date.parse(group.lastPinUpdateAt)
-      : 0;
-    if (!opts.force && Date.now() - lastMs < debounceMs) {
-      return "debounced";
-    }
 
     const state = await computePinState(group);
     const rendered = renderPinnedMessage({
@@ -152,6 +139,20 @@ export async function refreshPinnedMessage(
           return "error";
         }
       }
+      // If caller asked for a guaranteed pin (e.g. /setup), re-pin the
+      // existing message in case an admin unpinned it. pinChatMessage is
+      // idempotent — it returns ok=true even when the message is already
+      // pinned — so this is safe to call unconditionally.
+      if (opts.pin && group.botRights?.canPinMessages) {
+        const messageId = newMessageId ?? group.pinnedMessageId;
+        if (messageId !== undefined) {
+          await pinChatMessage({
+            chat_id: group.telegramChatId,
+            message_id: messageId,
+            disable_notification: true,
+          }).catch((e) => ctx?.warn?.("pinChatMessage (repin) failed", e));
+        }
+      }
     } else {
       // No existing pin (post-/setup creation path). Send + pin.
       const sent = await sendMessage({
@@ -171,15 +172,13 @@ export async function refreshPinnedMessage(
       outcome = "resent";
     }
 
-    if (outcome !== "no_change") {
+    // Persist a new message id when we had to re-send. No bookkeeping
+    // otherwise — we removed the debounce so there's no lastPinUpdateAt to
+    // track.
+    if (newMessageId !== undefined) {
       const updated: GroupDoc = {
         ...group,
-        ...(newMessageId !== undefined
-          ? { pinnedMessageId: newMessageId }
-          : group.pinnedMessageId !== undefined
-            ? { pinnedMessageId: group.pinnedMessageId }
-            : {}),
-        lastPinUpdateAt: new Date().toISOString(),
+        pinnedMessageId: newMessageId,
       };
       await containers_.groups().items.upsert(updated);
     }

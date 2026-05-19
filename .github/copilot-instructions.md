@@ -6,12 +6,12 @@ These rules apply to every Copilot interaction in this repository. They are deli
 
 Multi-tenant **Telegram Mini App** for organising casual pádel tournaments per Telegram group.
 
-| Layer    | Tech                                                                  |
-| -------- | --------------------------------------------------------------------- |
-| Frontend | **Vanilla React 18 + Vite 5** (TypeScript), workspace `app/`          |
-| Backend  | **Managed Azure Functions v4** (TypeScript, **Node 22 LTS**), `api/` |
-| Hosting  | **Azure Static Web Apps — Free tier** (managed Functions, no BYOF)    |
-| Data     | **Azure Cosmos DB for NoSQL** (Free tier, shared-throughput database) |
+| Layer    | Tech                                                                    |
+| -------- | ----------------------------------------------------------------------- |
+| Frontend | **Vanilla React 18 + Vite 5** (TypeScript), workspace `app/`            |
+| Backend  | **Managed Azure Functions v4** (TypeScript, **Node 22 LTS**), `api/`    |
+| Hosting  | **Azure Static Web Apps — Free tier** (managed Functions, no BYOF)      |
+| Data     | **Azure Cosmos DB for NoSQL** (Free tier, shared-throughput database)   |
 | Auth     | Telegram `initData` (HMAC + Ed25519) → JWT HS256 (4h, bearer-preferred) |
 
 Cost target: **$0/month** at low volume. Do not propose changes that violate this (e.g. Premium Functions, Cosmos dedicated throughput, SWA Standard tier, App Insights tier above Free).
@@ -63,7 +63,6 @@ Cost target: **$0/month** at low volume. Do not propose changes that violate thi
 - Mini App launch URL format: `https://t.me/<bot_username>/app?startapp=g_<groupShortId>`.
 - `initData` freshness window: **24 hours** (`AUTH_DATE_MAX_AGE_SECONDS`, spec §10.3 — not 5 minutes).
 - Webhook `secret_token` charset: `[A-Za-z0-9_-]`, 1–256 chars.
-- Pin debounce default: 60s (`PIN_DEBOUNCE_SECONDS`, overridable per group via `groups.settings.pinDebounceSeconds`).
 
 ## Things to NOT do
 

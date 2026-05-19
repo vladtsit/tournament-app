@@ -147,7 +147,7 @@ app.http("tournamentEnd", {
       finalStandings: standings,
     };
     await containers_.tournaments().items.upsert(updated);
-    await refreshPinnedMessage(ctx.groupId, { force: true });
+    await refreshPinnedMessage(ctx.groupId);
 
     return { status: 200, jsonBody: { tournament: updated } };
   },

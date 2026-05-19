@@ -81,7 +81,6 @@ interface GroupDoc {
   status: "active" | "inactive";
   settings: {
     language: SupportedLanguage;
-    pinDebounceSeconds: number;
     tiebreakRule: "regular_set" | "super_tiebreak_to_10";
   };
   botRights: {
@@ -251,7 +250,6 @@ async function handleSetup(
       status: "active",
       settings: {
         language: lang,
-        pinDebounceSeconds: 60,
         tiebreakRule: "super_tiebreak_to_10",
       },
       botRights: {
@@ -265,14 +263,10 @@ async function handleSetup(
   }
 
   // 4) Persist the group doc, then render+send/pin (or edit) the launch
-  //    message via the unified refresh helper. force=true bypasses the
-  //    pin-debounce so /setup always pushes a fresh message.
+  //    message via the unified refresh helper. pin=true re-pins the existing
+  //    message (idempotent) in case an admin unpinned it.
   await groups.items.upsert(doc);
-  const outcome = await refreshPinnedMessage(
-    groupId,
-    { force: true, pin: true },
-    ctx,
-  );
+  const outcome = await refreshPinnedMessage(groupId, { pin: true }, ctx);
   if (outcome === "error") {
     await safeSend(chat.id, t(lang, "setup.error"));
     return;

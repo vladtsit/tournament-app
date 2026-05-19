@@ -58,7 +58,7 @@ app.http("tournamentStart", {
       updatedAt: new Date().toISOString(),
     };
     await containers_.tournaments().items.upsert(updated);
-    await refreshPinnedMessage(ctx.groupId, { force: true });
+    await refreshPinnedMessage(ctx.groupId);
 
     return { status: 200, jsonBody: { tournament: updated } };
   },

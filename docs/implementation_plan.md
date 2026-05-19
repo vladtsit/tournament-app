@@ -38,7 +38,7 @@ Goal: pushing to `main` deploys the SPA at `https://green-ground-018c96b03.7.azu
 - **SWA**: `swa-free` in `rg-freetier` (West Europe, Free SKU). Hostname **`green-ground-018c96b03.7.azurestaticapps.net`**.
 - **Cosmos**: account `cdb-free` is **serverless** (not free-tier discounted, `enableFreeTier=false`). Throughput flags omitted on DB/container create. Cost at idle ≈ $0 (pay-per-request, no minimum RU/s).
 - **GitHub repo**: `vladtsit/tournamentes-app` → secret `AZURE_STATIC_WEB_APPS_API_TOKEN` set.
-- **Env var names** kept aligned with the existing `api/local.settings.json` (not the spec's verbatim names): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` (stored without leading `@`), `TELEGRAM_WEBHOOK_SECRET`, `JWT_SECRET`, `JWT_TTL_SECONDS`, `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE_ID`, `AUTH_DATE_MAX_AGE_SECONDS`, `PIN_DEBOUNCE_SECONDS`, `APP_BASE_URL`, `LOG_LEVEL`. **No `COSMOS_AUTH_MODE` env** — key-only auth is the single path (SWA Free has no MI for managed Functions).
+- **Env var names** kept aligned with the existing `api/local.settings.json` (not the spec's verbatim names): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` (stored without leading `@`), `TELEGRAM_WEBHOOK_SECRET`, `JWT_SECRET`, `JWT_TTL_SECONDS`, `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE_ID`, `AUTH_DATE_MAX_AGE_SECONDS`, `APP_BASE_URL`, `LOG_LEVEL`. **No `COSMOS_AUTH_MODE` env** — key-only auth is the single path (SWA Free has no MI for managed Functions).
 
 **Steps**
 
@@ -144,7 +144,6 @@ Goal: players can register yes/no, set BBQ yes/no, and form teams via instant pa
 
 **Phase 3 follow-ups**
 
-- Pinned-message debounce refresh on registration count change (`pinDebounceSeconds`).
 - `team_invites` container is reserved should we want to re-introduce explicit consent for pairing later.
 
 ### Team-formation hardening (shipped post-Phase 3)

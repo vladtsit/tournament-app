@@ -245,10 +245,10 @@ The frontend must not trust `window.Telegram.WebApp.initDataUnsafe`. It must sen
 `getChatMember(chat, user)` works for any bot that is **in the chat**, even without admin rights — it returns the user's status. The real reliability concerns are narrower:
 
 - The bot must be a member of the chat (not just configured). If removed, every call fails.
-- In supergroups with privacy mode on, the bot can still query specific users by id; the issue is the bot may not have *seen* a user post if it joined later (membership history is incomplete).
+- In supergroups with privacy mode on, the bot can still query specific users by id; the issue is the bot may not have _seen_ a user post if it joined later (membership history is incomplete).
 - The `chat_member` / `chat_join_request` **webhook updates** (the cheap real-time cache source) **do require the bot to be admin** and `allowed_updates` to include `chat_member`.
 
-Consequence: the plan still does **not** rely on `getChatMember` alone — see §10 for the multi-source strategy — but `getChatMember` is a *valid first-class fallback*, not a broken path.
+Consequence: the plan still does **not** rely on `getChatMember` alone — see §10 for the multi-source strategy — but `getChatMember` is a _valid first-class fallback_, not a broken path.
 
 ---
 
@@ -460,7 +460,7 @@ The function rejects any POST whose `X-Telegram-Bot-Api-Secret-Token` header doe
 ### 9.3 Group onboarding
 
 1. Group admin adds the bot to the Telegram group.
-2. Group admin **promotes the bot to admin** with: *Read Members*, *Pin Messages*, *Send Messages* (Delete Messages optional).
+2. Group admin **promotes the bot to admin** with: _Read Members_, _Pin Messages_, _Send Messages_ (Delete Messages optional).
 3. Group admin sends `/setup` in the group.
 4. The bot:
    - Validates the sender is a Telegram admin of the chat (`getChatMember`).
@@ -481,14 +481,14 @@ https://t.me/<bot>/app?startapp=g_<short>
 
 The `/api/telegram/webhook` handler must process:
 
-| Update | Action |
-| --- | --- |
-| `my_chat_member` → bot promoted/demoted | Update `groups.botRights`, surface admin warning if rights insufficient. |
-| `my_chat_member` → bot kicked | Mark group `status='inactive'`; stop scheduled work. |
-| `chat_member` | Upsert `group_users/{groupId}_{userId}` with latest status & timestamp. |
-| `chat_join_request` | Optional auto-approve, or record pending join. |
-| `message` containing `/setup`, `/help`, `/status` | Reply with Mini App link, group state, or admin help. |
-| `migrate_to_chat_id` (in `message`) | Update `groups.telegramChatId` to the new supergroup id; preserve `groupId`. |
+| Update                                            | Action                                                                       |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `my_chat_member` → bot promoted/demoted           | Update `groups.botRights`, surface admin warning if rights insufficient.     |
+| `my_chat_member` → bot kicked                     | Mark group `status='inactive'`; stop scheduled work.                         |
+| `chat_member`                                     | Upsert `group_users/{groupId}_{userId}` with latest status & timestamp.      |
+| `chat_join_request`                               | Optional auto-approve, or record pending join.                               |
+| `message` containing `/setup`, `/help`, `/status` | Reply with Mini App link, group state, or admin help.                        |
+| `migrate_to_chat_id` (in `message`)               | Update `groups.telegramChatId` to the new supergroup id; preserve `groupId`. |
 
 This **proactively maintains a `group_users` cache** so reads never depend on `getChatMember` at request time.
 
@@ -567,12 +567,21 @@ export function validateTelegramInitData(initData: string, botToken: string) {
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
 
-  const secretKey = crypto.createHmac("sha256", "WebAppData").update(botToken).digest();
-  const calc = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(botToken)
+    .digest();
+  const calc = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
 
   const ok =
     calc.length === receivedHash.length &&
-    crypto.timingSafeEqual(Buffer.from(calc, "hex"), Buffer.from(receivedHash, "hex"));
+    crypto.timingSafeEqual(
+      Buffer.from(calc, "hex"),
+      Buffer.from(receivedHash, "hex"),
+    );
   if (!ok) throw new Error("bad-signature");
 
   const authDate = Number(params.get("auth_date"));
@@ -580,7 +589,8 @@ export function validateTelegramInitData(initData: string, botToken: string) {
   // from HMAC + bot-token secrecy + short-lived session JWT. Tighter windows (5 min)
   // break in-app refresh because `initData` only regenerates when the Mini App is
   // reopened, not while it is open.
-  if (!authDate || Math.floor(Date.now() / 1000) - authDate > 86400) throw new Error("stale-auth");
+  if (!authDate || Math.floor(Date.now() / 1000) - authDate > 86400)
+    throw new Error("stale-auth");
 
   const userJson = params.get("user");
   if (!userJson) throw new Error("missing-user");
@@ -684,20 +694,20 @@ No tournament data is returned. The webhook may surface a "Join request" link fo
 
 Most containers partition by `/groupId` for tenant isolation. **Two exceptions** are partitioned by `/userId` because their natural access pattern is user-first and they are not group-scoped.
 
-| Container | Partition key | Document id pattern | Purpose |
-| --- | --- | --- | --- |
-| `groups` | `/groupId` | `g_<short>` (= `id`) | One doc per group. Each group lives in its own partition; fine at the expected scale (≤ tens of thousands of groups). |
-| `users` | **`/userId`** | `u_<telegramUserId>` (= `id`) | Global user profile (Telegram identity). Cross-group; partitioned per user for O(1) reads. |
-| `group_users` | `/groupId` | `{groupId}_{userId}` | Membership cache + per-group app role. |
-| `tournaments` | `/groupId` | `t_{yyyymmdd}_{short}` | One per tournament. Ordered by `tournamentDate`. |
-| `registrations` | `/groupId` | `r_{tournamentId}_{userId}` | One per user per tournament. Deterministic id prevents duplicates. |
-| `team_slots` | `/groupId` | `ts_{tournamentId}_{userId}` | **Reservation doc** that asserts "this user is in some team in this tournament". One per user per tournament. Created atomically with the team; see §12.3. |
-| `teams` | `/groupId` | `tm_{tournamentId}_{userIdA}_{userIdB}` (sorted ids) | Deterministic id: same two players in same tournament = same doc. |
-| `team_invites` | `/groupId` | `ti_{tournamentId}_{inviter}_{invitee}` | One pending invite per pair per tournament. |
-| `matches` | `/groupId` | `m_{tournamentId}_{ulid}` | Append-mostly. `_etag` for concurrency on edits. |
-| `player_stats` | `/groupId` | `ps_{userId}` | Overall (all-time) per-player score; updated on tournament end. |
-| `audit` | `/groupId` | `a_{ulid}` | Admin action log. TTL: 365 days. |
-| `idempotency` | **`/userId`** | `idem_{userId}_{key}` | Idempotency keys scoped to the calling user. TTL: 24 hours. `/userId` partition supports pre-auth POSTs (where `groupId` is not yet known) and prevents key-guessing replay attacks. |
+| Container       | Partition key | Document id pattern                                  | Purpose                                                                                                                                                                              |
+| --------------- | ------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `groups`        | `/groupId`    | `g_<short>` (= `id`)                                 | One doc per group. Each group lives in its own partition; fine at the expected scale (≤ tens of thousands of groups).                                                                |
+| `users`         | **`/userId`** | `u_<telegramUserId>` (= `id`)                        | Global user profile (Telegram identity). Cross-group; partitioned per user for O(1) reads.                                                                                           |
+| `group_users`   | `/groupId`    | `{groupId}_{userId}`                                 | Membership cache + per-group app role.                                                                                                                                               |
+| `tournaments`   | `/groupId`    | `t_{yyyymmdd}_{short}`                               | One per tournament. Ordered by `tournamentDate`.                                                                                                                                     |
+| `registrations` | `/groupId`    | `r_{tournamentId}_{userId}`                          | One per user per tournament. Deterministic id prevents duplicates.                                                                                                                   |
+| `team_slots`    | `/groupId`    | `ts_{tournamentId}_{userId}`                         | **Reservation doc** that asserts "this user is in some team in this tournament". One per user per tournament. Created atomically with the team; see §12.3.                           |
+| `teams`         | `/groupId`    | `tm_{tournamentId}_{userIdA}_{userIdB}` (sorted ids) | Deterministic id: same two players in same tournament = same doc.                                                                                                                    |
+| `team_invites`  | `/groupId`    | `ti_{tournamentId}_{inviter}_{invitee}`              | One pending invite per pair per tournament.                                                                                                                                          |
+| `matches`       | `/groupId`    | `m_{tournamentId}_{ulid}`                            | Append-mostly. `_etag` for concurrency on edits.                                                                                                                                     |
+| `player_stats`  | `/groupId`    | `ps_{userId}`                                        | Overall (all-time) per-player score; updated on tournament end.                                                                                                                      |
+| `audit`         | `/groupId`    | `a_{ulid}`                                           | Admin action log. TTL: 365 days.                                                                                                                                                     |
+| `idempotency`   | **`/userId`** | `idem_{userId}_{key}`                                | Idempotency keys scoped to the calling user. TTL: 24 hours. `/userId` partition supports pre-auth POSTs (where `groupId` is not yet known) and prevents key-guessing replay attacks. |
 
 All deterministic IDs use lowercase ULIDs or short hashes; player-pair IDs sort the two `userId`s lexicographically so `tm_{t}_{a}_{b}` == `tm_{t}_{b}_{a}`.
 
@@ -722,8 +732,7 @@ All deterministic IDs use lowercase ULIDs or short hashes; player-pair IDs sort 
     "scoring": "padel_best_of_3_sets",
     "minMatchesForRanking": 3,
     "allowReplay": true,
-    "bbqForNonPlaying": true,
-    "pinDebounceSeconds": 60
+    "bbqForNonPlaying": true
   },
   "createdAt": "2026-05-18T12:00:00Z"
 }
@@ -829,7 +838,11 @@ This avoids stored procedures and is fully atomic from the user's perspective.
   "tournamentId": "t_20260524_x7q2",
   "teamAId": "tm_..._u_123_u_456",
   "teamBId": "tm_..._u_789_u_012",
-  "sets": [ {"a":6,"b":4}, {"a":3,"b":6}, {"a":7,"b":5} ],
+  "sets": [
+    { "a": 6, "b": 4 },
+    { "a": 3, "b": 6 },
+    { "a": 7, "b": 5 }
+  ],
   "winnerTeamId": "tm_..._u_123_u_456",
   "submittedByUserId": "u_123",
   "status": "submitted",
@@ -1295,13 +1308,13 @@ A **single number per player per group**, easy to understand, designed to reward
 
 **Formula per tournament**, applied at `finalizeTournament()`:
 
-| Finish | Points |
-| --- | --- |
-| 1st place team | 10 |
-| 2nd place team | 7 |
-| 3rd place team | 5 |
-| 4th place team | 3 |
-| Participated (≥ 1 match) | 1 |
+| Finish                   | Points |
+| ------------------------ | ------ |
+| 1st place team           | 10     |
+| 2nd place team           | 7      |
+| 3rd place team           | 5      |
+| 4th place team           | 3      |
+| Participated (≥ 1 match) | 1      |
 
 Plus a per-match bonus: `+0.25 × wins`.
 
@@ -1333,7 +1346,7 @@ Recomputable: a one-off admin endpoint `POST /api/admin/groups/{groupId}/recompu
 ### 18.7 Easy UX touches
 
 - Show the user's own overall rank with a sticky highlighted row.
-- Show a delta on the main screen after a tournament ends: *"+10 points (1st place!)"*.
+- Show a delta on the main screen after a tournament ends: _"+10 points (1st place!)"_.
 - Cache last viewed leaderboard scope (current / history / overall) in `CloudStorage` so it reopens to the same place.
 
 ---
@@ -1474,9 +1487,9 @@ Teams active: 10    Matches: 18
 [Full results]
 ```
 
-### 21.4 Debouncing
+### 21.4 Update cadence
 
-Pinned-message updates are **debounced server-side to once per minute** per group (`groups.settings.pinDebounceSeconds = 60`). Updates that arrive during the cooldown coalesce into a single render; this avoids `editMessageText` rate-limit issues during result bursts.
+Pinned-message updates fire on **every state change** (registration toggle, pairing, match submit/confirm/dispute, tournament start/end). `editMessageText` is silent (no chat notification) and the app's user-paced event volume stays well below Telegram's per-chat edit limits, so no debounce is applied. `/setup` additionally re-issues `pinChatMessage` (idempotent) to recover from an admin manually unpinning the launch message.
 
 ### 21.5 No result spam
 
@@ -1490,62 +1503,62 @@ All endpoints under `/api`. JSON in/out. Bearer-token (or cookie) auth via `requ
 
 ### 22.0 Auth
 
-| Method | Path | Notes |
-| --- | --- | --- |
+| Method | Path                 | Notes                                                                                                                                                                          |
+| ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `POST` | `/api/auth/telegram` | Body: `{ initData, startParam?, chatInstance?, chatType? }`. Returns session JWT + group context, or `409 { groups: [...] }` for multi-group picker, or `403` if not a member. |
-| `GET`  | `/api/config` | Public. Returns `{ botUsername, miniAppShortName, env }`. |
+| `GET`  | `/api/config`        | Public. Returns `{ botUsername, miniAppShortName, env }`.                                                                                                                      |
 
 ### 22.1 Groups
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `GET`  | `/api/groups/mine` | Returns groups this user belongs to (`groupId`, title, last activity). Powers the picker. |
-| `POST` | `/api/groups/{groupId}/select` | Re-issues session JWT bound to a different group. |
-| `GET`  | `/api/groups/{groupId}` | Group metadata + settings (member-readable subset). |
-| `PATCH`| `/api/groups/{groupId}/settings` | Admin only. Body: partial `settings`. |
-| `GET`  | `/api/groups/{groupId}/overall-score` | Overall (cross-tournament) leaderboard. `?limit=50&cursor=`. |
-| `POST` | `/api/admin/groups/{groupId}/recompute-stats` | Admin only. Recomputes `player_stats`. |
+| Method  | Path                                          | Notes                                                                                     |
+| ------- | --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `GET`   | `/api/groups/mine`                            | Returns groups this user belongs to (`groupId`, title, last activity). Powers the picker. |
+| `POST`  | `/api/groups/{groupId}/select`                | Re-issues session JWT bound to a different group.                                         |
+| `GET`   | `/api/groups/{groupId}`                       | Group metadata + settings (member-readable subset).                                       |
+| `PATCH` | `/api/groups/{groupId}/settings`              | Admin only. Body: partial `settings`.                                                     |
+| `GET`   | `/api/groups/{groupId}/overall-score`         | Overall (cross-tournament) leaderboard. `?limit=50&cursor=`.                              |
+| `POST`  | `/api/admin/groups/{groupId}/recompute-stats` | Admin only. Recomputes `player_stats`.                                                    |
 
 ### 22.2 Tournaments
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `GET`  | `/api/tournaments/current` | The active tournament (`registration_open` or `live`) for the session's group. |
-| `GET`  | `/api/tournaments/history` | `?limit=20&cursor=` — past tournaments newest first. |
-| `GET`  | `/api/tournaments/{tournamentId}` | Single tournament (incl. `finalStandings` if ended). |
-| `GET`  | `/api/tournaments/{tournamentId}/leaderboard` | Live computation if active; frozen snapshot if ended. |
-| `POST` | `/api/admin/tournaments` | Admin only. Create draft. Body: `{ title, tournamentDate, timezone }`. |
-| `POST` | `/api/admin/tournaments/{tournamentId}/open` | Admin. Move `draft → registration_open`. |
-| `POST` | `/api/admin/tournaments/{tournamentId}/start` | Admin. Move `registration_open → live`. |
-| `POST` | `/api/admin/tournaments/{tournamentId}/end` | Admin. Move `live → ended`. Runs `finalizeTournament()`. |
+| Method | Path                                          | Notes                                                                          |
+| ------ | --------------------------------------------- | ------------------------------------------------------------------------------ |
+| `GET`  | `/api/tournaments/current`                    | The active tournament (`registration_open` or `live`) for the session's group. |
+| `GET`  | `/api/tournaments/history`                    | `?limit=20&cursor=` — past tournaments newest first.                           |
+| `GET`  | `/api/tournaments/{tournamentId}`             | Single tournament (incl. `finalStandings` if ended).                           |
+| `GET`  | `/api/tournaments/{tournamentId}/leaderboard` | Live computation if active; frozen snapshot if ended.                          |
+| `POST` | `/api/admin/tournaments`                      | Admin only. Create draft. Body: `{ title, tournamentDate, timezone }`.         |
+| `POST` | `/api/admin/tournaments/{tournamentId}/open`  | Admin. Move `draft → registration_open`.                                       |
+| `POST` | `/api/admin/tournaments/{tournamentId}/start` | Admin. Move `registration_open → live`.                                        |
+| `POST` | `/api/admin/tournaments/{tournamentId}/end`   | Admin. Move `live → ended`. Runs `finalizeTournament()`.                       |
 
 ### 22.3 Registrations
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `PUT`  | `/api/tournaments/{tournamentId}/registration` | Body: `{ isPlaying, bbqYes, lookingForTeammate? }`. Upserts. Deterministic id ensures one per user. |
-| `GET`  | `/api/tournaments/{tournamentId}/registrations` | List for admin & "looking for teammate" widget. |
+| Method | Path                                            | Notes                                                                                               |
+| ------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `PUT`  | `/api/tournaments/{tournamentId}/registration`  | Body: `{ isPlaying, bbqYes, lookingForTeammate? }`. Upserts. Deterministic id ensures one per user. |
+| `GET`  | `/api/tournaments/{tournamentId}/registrations` | List for admin & "looking for teammate" widget.                                                     |
 
 ### 22.4 Teams
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `POST` | `/api/tournaments/{tournamentId}/teams` | Body: `{ teammateUserId }`. Creates `forming` team and a `team_invite`. Idempotent on `(inviter, invitee, tournamentId)`. |
-| `POST` | `/api/team-invites/{inviteId}/accept` | Transactional batch: invite → `accepted`, team → `available`, enforce one-active-team rule. |
-| `POST` | `/api/team-invites/{inviteId}/decline` | |
-| `POST` | `/api/teams/{teamId}/status` | Body: `{ status: 'available'|'resting'|'stopped' }`. ETag-checked. |
-| `GET`  | `/api/tournaments/{tournamentId}/teams/available` | Sorted opponent list (see §16.4). |
-| `DELETE` | `/api/admin/teams/{teamId}` | Admin. Soft-delete (status = `deleted`). |
+| Method   | Path                                              | Notes                                                                                                                     |
+| -------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------- | --------------------------- |
+| `POST`   | `/api/tournaments/{tournamentId}/teams`           | Body: `{ teammateUserId }`. Creates `forming` team and a `team_invite`. Idempotent on `(inviter, invitee, tournamentId)`. |
+| `POST`   | `/api/team-invites/{inviteId}/accept`             | Transactional batch: invite → `accepted`, team → `available`, enforce one-active-team rule.                               |
+| `POST`   | `/api/team-invites/{inviteId}/decline`            |                                                                                                                           |
+| `POST`   | `/api/teams/{teamId}/status`                      | Body: `{ status: 'available'                                                                                              | 'resting' | 'stopped' }`. ETag-checked. |
+| `GET`    | `/api/tournaments/{tournamentId}/teams/available` | Sorted opponent list (see §16.4).                                                                                         |
+| `DELETE` | `/api/admin/teams/{teamId}`                       | Admin. Soft-delete (status = `deleted`).                                                                                  |
 
 ### 22.5 Matches
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `POST` | `/api/tournaments/{tournamentId}/matches` | **Requires `Idempotency-Key`** header (UUID). Body: `{ teamAId, teamBId, sets: [{a,b},...] }`. |
-| `POST` | `/api/matches/{matchId}/confirm` | Opponent only. |
-| `POST` | `/api/matches/{matchId}/dispute` | Opponent only. Body: `{ reason? }`. |
-| `PATCH`| `/api/admin/matches/{matchId}` | Admin. Body: partial `{ sets, status, adminNote }`. Uses `If-Match` ETag. |
-| `DELETE` | `/api/admin/matches/{matchId}` | Admin. Soft-delete. |
+| Method   | Path                                      | Notes                                                                                          |
+| -------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `POST`   | `/api/tournaments/{tournamentId}/matches` | **Requires `Idempotency-Key`** header (UUID). Body: `{ teamAId, teamBId, sets: [{a,b},...] }`. |
+| `POST`   | `/api/matches/{matchId}/confirm`          | Opponent only.                                                                                 |
+| `POST`   | `/api/matches/{matchId}/dispute`          | Opponent only. Body: `{ reason? }`.                                                            |
+| `PATCH`  | `/api/admin/matches/{matchId}`            | Admin. Body: partial `{ sets, status, adminNote }`. Uses `If-Match` ETag.                      |
+| `DELETE` | `/api/admin/matches/{matchId}`            | Admin. Soft-delete.                                                                            |
 
 **Idempotency replay rules** (all POSTs that accept `Idempotency-Key`):
 
@@ -1555,28 +1568,30 @@ All endpoints under `/api`. JSON in/out. Bearer-token (or cookie) auth via `requ
 
 ### 22.6 Admin extras
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `GET`  | `/api/admin/tournaments/{tournamentId}/bbq-export` | CSV. |
-| `GET`  | `/api/admin/tournaments/{tournamentId}/results-export` | CSV. |
-| `POST` | `/api/admin/groups/{groupId}/admins` | Body: `{ userId }`. Promote. |
-| `DELETE` | `/api/admin/groups/{groupId}/admins/{userId}` | Demote. |
-| `POST` | `/api/admin/groups/{groupId}/pin-refresh` | Force re-render & re-pin of the group message. Debounced server-side. |
+| Method   | Path                                                   | Notes                                                                 |
+| -------- | ------------------------------------------------------ | --------------------------------------------------------------------- |
+| `GET`    | `/api/admin/tournaments/{tournamentId}/bbq-export`     | CSV.                                                                  |
+| `GET`    | `/api/admin/tournaments/{tournamentId}/results-export` | CSV.                                                                  |
+| `POST`   | `/api/admin/groups/{groupId}/admins`                   | Body: `{ userId }`. Promote.                                          |
+| `DELETE` | `/api/admin/groups/{groupId}/admins/{userId}`          | Demote.                                                               |
+| `POST`   | `/api/admin/groups/{groupId}/pin-refresh`              | Force re-render & re-pin of the group message. Debounced server-side. |
 
 ### 22.7 Webhook
 
-| Method | Path | Notes |
-| --- | --- | --- |
+| Method | Path                    | Notes                                                      |
+| ------ | ----------------------- | ---------------------------------------------------------- |
 | `POST` | `/api/telegram/webhook` | Telegram-only. Requires `X-Telegram-Bot-Api-Secret-Token`. |
 
 ### 22.8 Response envelopes
 
 Success:
+
 ```json
 { "ok": true, "data": { ... } }
 ```
 
 Error:
+
 ```json
 { "ok": false, "error": { "code": "not_member", "message": "..." } }
 ```
@@ -1639,7 +1654,6 @@ COSMOS_AUTH_MODE            = aad           # 'aad' (managed identity) or 'key'
 COSMOS_KEY                  = @Microsoft.KeyVault(SecretUri=...)   # only if COSMOS_AUTH_MODE=key
 APPLICATIONINSIGHTS_CONNECTION_STRING = ...
 MEMBERSHIP_CACHE_TTL_SECONDS = 3600
-PIN_DEBOUNCE_SECONDS_DEFAULT = 60
 ```
 
 **Precedence:** every `groups.settings.*` field overrides the matching `*_DEFAULT` env var. Env defaults are used only at group-creation time to seed new `groups` docs; once a group exists, its stored settings win.
@@ -1656,17 +1670,17 @@ No secrets are exposed to the frontend. `botUsername` and `miniAppShortName` are
 
 ## 25. Error Handling
 
-| Situation | UI message |
-| --- | --- |
-| Opened outside Telegram | "Please open this app from Telegram." |
-| Not a group member | "This app is only available to members of this group." |
-| Bot lacks admin rights | (admin-only banner) "Promote the bot to admin with *Read Members* and *Pin Messages* so it can verify members and update the pinned message." |
-| User belongs to multiple groups, no `start_param` | Group picker screen. |
-| Tournament invalid/ended | "This tournament is no longer active." |
-| No team during live tournament | "You need a team before entering results. [Form team]" |
-| Duplicate result | "These teams logged a match 12 min ago." |
-| Rate limited | "Slow down — try again in a few seconds." |
-| Network error | Retry button + offline-detection banner. |
+| Situation                                         | UI message                                                                                                                                    |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Opened outside Telegram                           | "Please open this app from Telegram."                                                                                                         |
+| Not a group member                                | "This app is only available to members of this group."                                                                                        |
+| Bot lacks admin rights                            | (admin-only banner) "Promote the bot to admin with _Read Members_ and _Pin Messages_ so it can verify members and update the pinned message." |
+| User belongs to multiple groups, no `start_param` | Group picker screen.                                                                                                                          |
+| Tournament invalid/ended                          | "This tournament is no longer active."                                                                                                        |
+| No team during live tournament                    | "You need a team before entering results. [Form team]"                                                                                        |
+| Duplicate result                                  | "These teams logged a match 12 min ago."                                                                                                      |
+| Rate limited                                      | "Slow down — try again in a few seconds."                                                                                                     |
+| Network error                                     | Retry button + offline-detection banner.                                                                                                      |
 
 All errors include an `error.code` from §22.8 so the UI can localize.
 
@@ -1986,19 +2000,19 @@ BBQ no: 15
 
 ## 31. Open Questions — Resolved for v2.0
 
-| # | Question | Decision |
-| --- | --- | --- |
-| 1 | Scoring format | Padel best-of-3 sets; pluggable via `groups.settings.scoring`. |
-| 2 | Min matches for ranking | 3 (configurable). |
-| 3 | BBQ for non-playing users | Allowed by default (`bbqForNonPlaying = true`). |
-| 4 | Teams replay each other | Allowed; show duplicate warning if within 20 min. |
-| 5 | Disputed results count | Yes, immediately, with a visible "Disputed" badge. |
-| 6 | App admins vs Telegram admins | Separate; first app admin = the user who ran `/setup`. |
-| 7 | `getChatMember` reliability | Not the sole gate; multi-source resolution (§10.5). |
-| 8 | Multi-group identity | Direct Link Mini App + `chat_instance` → `start_param` → user's known groups → picker. |
-| 9 | Idempotent writes | Required on `POST /matches` via `Idempotency-Key` header. |
-| 10 | GDPR | Deferred to v2.1; placeholder noted (§26.3). |
-| 11 | One bot or many | One bot, multi-tenant. Managed Bots / Guest Bots noted as future options. |
+| #   | Question                      | Decision                                                                               |
+| --- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| 1   | Scoring format                | Padel best-of-3 sets; pluggable via `groups.settings.scoring`.                         |
+| 2   | Min matches for ranking       | 3 (configurable).                                                                      |
+| 3   | BBQ for non-playing users     | Allowed by default (`bbqForNonPlaying = true`).                                        |
+| 4   | Teams replay each other       | Allowed; show duplicate warning if within 20 min.                                      |
+| 5   | Disputed results count        | Yes, immediately, with a visible "Disputed" badge.                                     |
+| 6   | App admins vs Telegram admins | Separate; first app admin = the user who ran `/setup`.                                 |
+| 7   | `getChatMember` reliability   | Not the sole gate; multi-source resolution (§10.5).                                    |
+| 8   | Multi-group identity          | Direct Link Mini App + `chat_instance` → `start_param` → user's known groups → picker. |
+| 9   | Idempotent writes             | Required on `POST /matches` via `Idempotency-Key` header.                              |
+| 10  | GDPR                          | Deferred to v2.1; placeholder noted (§26.3).                                           |
+| 11  | One bot or many               | One bot, multi-tenant. Managed Bots / Guest Bots noted as future options.              |
 
 Remaining genuinely open items:
 
