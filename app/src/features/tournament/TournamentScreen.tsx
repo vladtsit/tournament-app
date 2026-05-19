@@ -1268,7 +1268,64 @@ function LiveSection({
               )}
             </div>
 
-            <Stack gap="sm">
+            <Stack gap="xs">
+              <Inline gap="md" justify="space-between" align="center">
+                <Stack gap="none" style={{ flex: 1, minWidth: 0 }}>
+                  <span
+                    style={{
+                      fontSize: "var(--font-xs)",
+                      color: "var(--text-muted)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      fontWeight: "var(--weight-semibold)",
+                    }}
+                  >
+                    {t("live.yourScore")}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "var(--font-sm)",
+                      fontWeight: "var(--weight-semibold)",
+                      color: "var(--text)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {teamLabel(myTeam)}
+                  </span>
+                </Stack>
+                <Stack
+                  gap="none"
+                  style={{ flex: 1, minWidth: 0, textAlign: "right" }}
+                >
+                  <span
+                    style={{
+                      fontSize: "var(--font-xs)",
+                      color: "var(--text-muted)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      fontWeight: "var(--weight-semibold)",
+                    }}
+                  >
+                    {t("live.opponentScore")}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "var(--font-sm)",
+                      fontWeight: "var(--weight-semibold)",
+                      color: opponentId ? "var(--text)" : "var(--text-muted)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {opponentId
+                      ? teamLabelById(opponentId)
+                      : t("live.pickOpponentFirst")}
+                  </span>
+                </Stack>
+              </Inline>
               <SetScoreInput
                 a={scoreA}
                 b={scoreB}
@@ -1276,6 +1333,8 @@ function LiveSection({
                 onChangeB={setScoreB}
                 disabled={busy}
                 max={99}
+                labelA={t("live.yourScore")}
+                labelB={t("live.opponentScore")}
               />
             </Stack>
 

@@ -47,7 +47,6 @@ export type PinState =
 export interface PinnedMessageContext {
   language: SupportedLanguage;
   groupShortId: string;
-  groupTitle: string;
   state: PinState;
 }
 
@@ -150,17 +149,16 @@ function escapeHtml(s: string): string {
 
 export function renderPinnedMessage(ctx: PinnedMessageContext): PinnedRendered {
   const s = STRINGS[ctx.language];
-  const titleLine = `🎾 <b>${escapeHtml(ctx.groupTitle)}</b>`;
-  const lines: string[] = [titleLine];
+  const lines: string[] = [];
 
   switch (ctx.state.kind) {
     case "idle":
-      lines.push(s.statusIdle, "", s.statusIdleHint);
+      lines.push(`🎾 <b>${s.statusIdle}</b>`, "", s.statusIdleHint);
       break;
     case "registration": {
       const st = ctx.state;
       lines.push(
-        s.statusRegistration,
+        `🎾 <b>${s.statusRegistration}</b>`,
         "",
         `👥 ${s.registeredLabel}: <b>${st.registeredCount}</b>   🍖 ${s.bbqLabel}: <b>${st.bbqCount}</b>`,
         `🤝 ${s.pairsLabel(st.teamsFormed, st.teamsExpected)}`,
@@ -170,7 +168,7 @@ export function renderPinnedMessage(ctx: PinnedMessageContext): PinnedRendered {
     case "live": {
       const st = ctx.state;
       lines.push(
-        s.statusLive,
+        `🎾 <b>${s.statusLive}</b>`,
         "",
         `🏟 ${s.matchesLabel(st.matchesPlayed, st.matchesTotal)}`,
         st.leader
@@ -181,7 +179,7 @@ export function renderPinnedMessage(ctx: PinnedMessageContext): PinnedRendered {
     }
     case "ended": {
       const medals = ["🥇", "🥈", "🥉"];
-      lines.push(s.statusEnded, "");
+      lines.push(`🎾 <b>${s.statusEnded}</b>`, "");
       ctx.state.podium.slice(0, 3).forEach((t, i) => {
         lines.push(`${medals[i] ?? "•"} <b>${escapeHtml(teamLabel(t))}</b>`);
       });

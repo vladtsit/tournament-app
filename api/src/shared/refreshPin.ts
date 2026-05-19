@@ -88,7 +88,6 @@ export async function refreshPinnedMessage(
     const rendered = renderPinnedMessage({
       language: group.settings.language,
       groupShortId: group.groupShortId,
-      groupTitle: group.title,
       state,
     });
 
