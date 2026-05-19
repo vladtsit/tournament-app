@@ -11,7 +11,11 @@ interface Options {
 
 /**
  * Drive the Telegram MainButton from a component. Safe no-op outside Telegram.
- * The button is hidden automatically when the host component unmounts.
+ *
+ * `visible:false` is a NO-OP — this allows multiple components in the tree to
+ * use the hook safely as long as at most one has `visible:true` at any time.
+ * The button is hidden automatically when the active host effect cleans up
+ * (re-render with new deps, transition to `visible:false`, or unmount).
  */
 export function useMainButton({
   visible,
@@ -21,13 +25,10 @@ export function useMainButton({
   onClick,
 }: Options): void {
   useEffect(() => {
+    if (!visible) return;
     const wa = getWebApp();
     const btn = wa?.MainButton;
     if (!btn) return;
-    if (!visible) {
-      btn.hide();
-      return;
-    }
     btn.setText(text);
     if (enabled) btn.enable();
     else btn.disable();

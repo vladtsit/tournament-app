@@ -89,6 +89,7 @@
     "you": "Tú",
     "nooneLooking": "Aún nadie más busca compañero.",
     "pair": "Emparejar",
+    "pairWith": "Emparejar con {{name}}",
     "confirmPair": "¿Emparejarte con {{name}}?",
     "leave": "Salir del equipo",
     "leaveConfirm": "¿Salir del equipo ({{name}})? Ambos volveréis a la lista de jugadores que buscan compañero."
@@ -137,7 +138,11 @@
     "editPrompt": "Ingresa los sets, ej.: 6-4,3-6,10-7",
     "deleteConfirm": "¿Borrar este partido ({{score}})? No se puede deshacer.",
     "exportBbq": "Exportar BBQ (CSV)",
-    "exportResults": "Exportar resultados (CSV)"
+    "exportResults": "Exportar resultados (CSV)",
+    "openDisputes": "Ver disputas ({{n}})",
+    "disputesTitle": "Partidos en disputa",
+    "noDisputes": "No hay partidos en disputa.",
+    "submittedBy": "enviado por {{name}}"
   },
   "help": {
     "title": "Ayuda",

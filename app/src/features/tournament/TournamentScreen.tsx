@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { api, ApiClientError, downloadAuthed } from "../../apiClient";
 import { haptic, storage, isInTelegram } from "../../telegram";
 import { useMainButton } from "../../hooks/useMainButton";
+import { DisputesScreen } from "../admin/DisputesScreen";
 
 interface PlayerSummary {
   userId: string;
@@ -166,6 +167,43 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     }
   }, [data, reload, t]);
 
+  // Top-level MainButton coordinator. The three modes are mutually exclusive
+  // with each other AND with LiveSection's submit-match MainButton (LiveSection
+  // only mounts when `isLive && data.team`).
+  const tournament = data?.tournament ?? null;
+  const inTelegram = isInTelegram();
+  const canCreate = !tournament && isAdmin && draftName.trim().length > 0;
+  const canStart =
+    !!tournament &&
+    isAdmin &&
+    tournament.status === "registration_open" &&
+    (!data?.registration?.playing || !!data?.team);
+  const canEnd =
+    !!tournament && isAdmin && tournament.status === "live" && !data?.team;
+
+  const mbVisible =
+    inTelegram && !loading && (canCreate || canStart || canEnd);
+  const mbText = canCreate
+    ? t("tournament.create")
+    : canStart
+      ? t("tournament.start")
+      : canEnd
+        ? t("tournament.end")
+        : "";
+  const mbOnClick = useCallback((): void => {
+    if (canCreate) void createTournament();
+    else if (canStart) void startTournament();
+    else if (canEnd) void endTournament();
+  }, [canCreate, canStart, canEnd, createTournament, startTournament, endTournament]);
+
+  useMainButton({
+    visible: mbVisible,
+    text: mbText,
+    enabled: !busy,
+    showProgress: busy,
+    onClick: mbOnClick,
+  });
+
   if (loading) return <p>…</p>;
   if (error)
     return (
@@ -200,7 +238,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
               type="button"
               onClick={() => void createTournament()}
               disabled={busy}
-              style={btnPrimary}
+              style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
             >
               {t("tournament.create")}
             </button>
@@ -267,7 +305,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           type="button"
           onClick={() => void startTournament()}
           disabled={busy}
-          style={btnPrimary}
+          style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
         >
           {t("tournament.start")}
         </button>
@@ -291,7 +329,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           type="button"
           onClick={() => void endTournament()}
           disabled={busy}
-          style={btnDanger}
+          style={{ ...btnDanger, display: inTelegram && !data.team ? "none" : undefined }}
         >
           {t("tournament.end")}
         </button>
@@ -314,9 +352,11 @@ function TeamSection({
   const { t } = useTranslation();
   const [players, setPlayers] = useState<LookingResponse["players"]>([]);
   const [lastPartnerId, setLastPartnerId] = useState<string | null>(null);
+  const [pendingPartnerId, setPendingPartnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inTelegram = isInTelegram();
 
   const reload = useCallback(async (): Promise<void> => {
     if (team) {
@@ -347,7 +387,10 @@ function TeamSection({
 
   const pair = useCallback(
     async (partnerUserId: string, partnerLabel: string): Promise<void> => {
+      // In Telegram, MainButton is the confirmation surface; outside Telegram
+      // fall back to a browser confirm dialog.
       if (
+        !inTelegram &&
         typeof window !== "undefined" &&
         !window.confirm(t("teams.confirmPair", { name: partnerLabel }))
       ) {
@@ -363,6 +406,7 @@ function TeamSection({
           idempotencyKey: `team-${tournamentId}-${partnerUserId}-${Date.now()}`,
         });
         void storage.set(`lastPartner_${groupId}`, partnerUserId);
+        setPendingPartnerId(null);
         haptic.notify("success");
         await onChange();
       } catch (err) {
@@ -372,8 +416,25 @@ function TeamSection({
         setBusy(false);
       }
     },
-    [tournamentId, groupId, onChange, t],
+    [tournamentId, groupId, onChange, t, inTelegram],
   );
+
+  const pendingPartner = pendingPartnerId
+    ? players.find((p) => p.userId === pendingPartnerId) ?? null
+    : null;
+  const pendingLabel = pendingPartner ? fullName(pendingPartner) : "";
+
+  useMainButton({
+    visible: inTelegram && !team && !!pendingPartnerId && !busy,
+    text: pendingLabel ? t("teams.pairWith", { name: pendingLabel }) : "",
+    enabled: !busy,
+    showProgress: busy,
+    onClick: () => {
+      if (pendingPartnerId && pendingLabel) {
+        void pair(pendingPartnerId, pendingLabel);
+      }
+    },
+  });
 
   const leaveTeam = useCallback(async (): Promise<void> => {
     if (!team) return;
@@ -436,18 +497,37 @@ function TeamSection({
             })
             .map((p) => {
               const recent = p.userId === lastPartnerId;
+              const selected = p.userId === pendingPartnerId;
+              const accent = "var(--tg-theme-button-color, #2ea6ff)";
+              const onRowClick = (): void => {
+                if (busy) return;
+                if (inTelegram) {
+                  haptic.selection();
+                  setPendingPartnerId((curr) =>
+                    curr === p.userId ? null : p.userId,
+                  );
+                }
+              };
               return (
                 <li
                   key={p.userId}
+                  onClick={onRowClick}
                   style={{
                     ...listRow,
-                    ...(recent
+                    cursor: inTelegram ? "pointer" : "default",
+                    ...(selected
                       ? {
-                          borderLeft:
-                            "3px solid var(--tg-theme-button-color, #2ea6ff)",
+                          background:
+                            "var(--tg-theme-secondary-bg-color, #f1f1f1)",
+                          borderLeft: `3px solid ${accent}`,
                           paddingLeft: 6,
                         }
-                      : null),
+                      : recent
+                        ? {
+                            borderLeft: `3px solid ${accent}`,
+                            paddingLeft: 6,
+                          }
+                        : null),
                   }}
                 >
                   <span>
@@ -459,12 +539,30 @@ function TeamSection({
                         ★
                       </span>
                     )}
+                    {selected && (
+                      <span
+                        style={{
+                          marginLeft: 6,
+                          fontSize: 12,
+                          opacity: 0.8,
+                          color: accent,
+                        }}
+                      >
+                        ✓
+                      </span>
+                    )}
                   </span>
                   <button
                     type="button"
-                    onClick={() => void pair(p.userId, fullName(p))}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void pair(p.userId, fullName(p));
+                    }}
                     disabled={busy}
-                    style={btnSmall}
+                    style={{
+                      ...btnSmall,
+                      display: inTelegram ? "none" : undefined,
+                    }}
                   >
                     {t("teams.pair")}
                   </button>
@@ -583,6 +681,7 @@ function LiveSection({
   const [s3a, setS3a] = useState("");
   const [s3b, setS3b] = useState("");
   const [opponentId, setOpponentId] = useState("");
+  const [showDisputes, setShowDisputes] = useState(false);
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -793,7 +892,7 @@ function LiveSection({
   const inTelegram = isInTelegram();
 
   useMainButton({
-    visible: inTelegram && !loading,
+    visible: inTelegram && !loading && !showDisputes,
     text: t("live.submitMatch"),
     enabled: canSubmit,
     showProgress: busy,
@@ -817,6 +916,13 @@ function LiveSection({
 
   return (
     <>
+      {showDisputes && (
+        <DisputesScreen
+          tournamentId={tournamentId}
+          onClose={() => setShowDisputes(false)}
+        />
+      )}
+      <div style={{ display: showDisputes ? "none" : "contents" }}>
       {isAdmin && (
         <section style={cardStyle}>
           <h3 style={sectionTitle}>{t("admin.overview")}</h3>
@@ -832,6 +938,18 @@ function LiveSection({
           <div
             style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}
           >
+            <button
+              type="button"
+              onClick={() => {
+                haptic.selection();
+                setShowDisputes(true);
+              }}
+              style={btnSmall}
+            >
+              {t("admin.openDisputes", {
+                n: matches.filter((m) => m.status === "disputed").length,
+              })}
+            </button>
             <button
               type="button"
               onClick={() =>
@@ -1037,6 +1155,7 @@ function LiveSection({
           {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
         </p>
       )}
+      </div>
     </>
   );
 }

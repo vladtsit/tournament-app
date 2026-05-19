@@ -89,6 +89,7 @@
     "you": "You",
     "nooneLooking": "No one else is looking for a partner yet.",
     "pair": "Pair up",
+    "pairWith": "Pair up with {{name}}",
     "confirmPair": "Pair up with {{name}}?",
     "leave": "Leave team",
     "leaveConfirm": "Leave the team ({{name}})? Both of you will go back to the looking-for-teammate list."
@@ -137,7 +138,11 @@
     "editPrompt": "Enter sets as e.g. 6-4,3-6,10-7",
     "deleteConfirm": "Delete this match ({{score}})? This cannot be undone.",
     "exportBbq": "Export BBQ (CSV)",
-    "exportResults": "Export results (CSV)"
+    "exportResults": "Export results (CSV)",
+    "openDisputes": "Open disputes ({{n}})",
+    "disputesTitle": "Disputed matches",
+    "noDisputes": "No disputed matches.",
+    "submittedBy": "submitted by {{name}}"
   },
   "help": {
     "title": "Help",

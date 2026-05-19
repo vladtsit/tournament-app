@@ -89,6 +89,7 @@
     "you": "Вы",
     "nooneLooking": "Пока никто не ищет напарника.",
     "pair": "В пару",
+    "pairWith": "В пару с {{name}}",
     "confirmPair": "Встать в пару с {{name}}?",
     "leave": "Покинуть команду",
     "leaveConfirm": "Покинуть команду ({{name}})? Вы оба вернётесь в список ищущих напарника."
@@ -137,7 +138,11 @@
     "editPrompt": "Введите сеты, напр. 6-4,3-6,10-7",
     "deleteConfirm": "Удалить этот матч ({{score}})? Отменить нельзя.",
     "exportBbq": "Экспорт BBQ (CSV)",
-    "exportResults": "Экспорт результатов (CSV)"
+    "exportResults": "Экспорт результатов (CSV)",
+    "openDisputes": "Спорные матчи ({{n}})",
+    "disputesTitle": "Спорные матчи",
+    "noDisputes": "Нет спорных матчей.",
+    "submittedBy": "отправил: {{name}}"
   },
   "help": {
     "title": "Помощь",

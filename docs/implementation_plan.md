@@ -279,9 +279,9 @@ Goal: ship-quality UX, admin tooling, exports, light telemetry.
 - ✅ **BackButton** wired on non-current tabs (`hooks/useBackButton.ts`).
 - ✅ **CloudStorage** persistence of last-used tab (key `lastTab`).
 - ✅ **Rate limiting**: `shared/rateLimit.ts` — 30 mutating requests / 60s per user, in-memory; auto-enforced inside `requireAuth` for POST/PUT/PATCH/DELETE; surfaces HTTP 429 with `error.code='rate_limited'` and `retryAfterSec` hint via `mapGroupContextError`. i18n key `errors.rate_limited` in en/es/ru.
-- ⏳ **CloudStorage** for _last group_ / _last teammate_ / _last opponent_ — `lastTab` + `lastPartner_{groupId}` shipped; `lastOpponent_{tournamentId}` still TODO.
-- 🟡 **MainButton / BottomButton** integration: MainButton drives match submission inside Telegram; remaining flows still use inline buttons.
-- 🟡 **Admin dashboard polish**: counts banner (teams + match status counts), `PATCH /api/matches/{id}` (admin edit + resolve dispute), `DELETE /api/matches/{id}` (admin remove) wired into the live match list. Dispute queue itself still uses the inline list (no separate page).
+- ✅ **CloudStorage** persistence: `lastTab` (active tab) and `lastPartner_{groupId}` (recommended teammate). `lastOpponent_{tournamentId}` intentionally dropped — opponent selection is short, transient, and per-tournament; persisting it would surface stale teams across matches.
+- ✅ **MainButton** integration across all primary flows: create tournament, start tournament, end tournament (admin without team), pair teammate, submit match. Conditions are mutually exclusive so only one is bound at any time.
+- ✅ **Admin dashboard polish**: counts banner (teams + match status counts), `PATCH /api/matches/{id}` (admin edit + resolve dispute), `DELETE /api/matches/{id}` (admin remove), and a dedicated **Disputes admin sub-screen** (full-page overlay with BackButton) opened from the admin overview card.
 - ✅ **CSV exports** `GET /api/tournaments/{id}/bbq-export`, `GET /api/tournaments/{id}/results-export` (admin-only; download buttons in Admin overview).
 - ✅ **App Insights** Free-tier wiring: opt-in via `APPLICATIONINSIGHTS_CONNECTION_STRING` (`api/src/shared/telemetry.ts`); HTTP requests + exceptions only, no live metrics, cloud role `padel-api`.
 - ✅ **In-app Help** (`?` button → `HelpScreen`) with 11 localised sections (intro / registration / pairing / live / matches / leaderboard / history / overall / admin / language / privacy) in en/es/ru.
