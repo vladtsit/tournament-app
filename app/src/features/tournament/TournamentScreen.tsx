@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiClientError, downloadAuthed } from "../../apiClient";
 import { haptic, storage, isInTelegram } from "../../telegram";
@@ -173,20 +179,18 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
 
   // Top-level MainButton coordinator. The three modes are mutually exclusive
   // with each other AND with LiveSection's submit-match MainButton (LiveSection
-  // only mounts when `isLive && data.team`).
+  // only mounts when `isLive && data.team`). TeamSection's pair MainButton may
+  // also be active when the admin is selecting a partner; child effects fire
+  // after parent so the pair-MB wins while a partner is selected.
   const tournament = data?.tournament ?? null;
   const inTelegram = isInTelegram();
   const canCreate = !tournament && isAdmin && draftName.trim().length > 0;
   const canStart =
-    !!tournament &&
-    isAdmin &&
-    tournament.status === "registration_open" &&
-    (!data?.registration?.playing || !!data?.team);
+    !!tournament && isAdmin && tournament.status === "registration_open";
   const canEnd =
     !!tournament && isAdmin && tournament.status === "live" && !data?.team;
 
-  const mbVisible =
-    inTelegram && !loading && (canCreate || canStart || canEnd);
+  const mbVisible = inTelegram && !loading && (canCreate || canStart || canEnd);
   const mbText = canCreate
     ? t("tournament.create")
     : canStart
@@ -198,7 +202,14 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     if (canCreate) void createTournament();
     else if (canStart) void startTournament();
     else if (canEnd) void endTournament();
-  }, [canCreate, canStart, canEnd, createTournament, startTournament, endTournament]);
+  }, [
+    canCreate,
+    canStart,
+    canEnd,
+    createTournament,
+    startTournament,
+    endTournament,
+  ]);
 
   useMainButton({
     visible: mbVisible,
@@ -242,7 +253,10 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
               type="button"
               onClick={() => void createTournament()}
               disabled={busy}
-              style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
+              style={{
+                ...btnPrimary,
+                display: inTelegram ? "none" : undefined,
+              }}
             >
               {t("tournament.create")}
             </button>
@@ -309,7 +323,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           type="button"
           onClick={() => void startTournament()}
           disabled={busy}
-          style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
+          style={btnPrimary}
         >
           {t("tournament.start")}
         </button>
@@ -333,7 +347,10 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           type="button"
           onClick={() => void endTournament()}
           disabled={busy}
-          style={{ ...btnDanger, display: inTelegram && !data.team ? "none" : undefined }}
+          style={{
+            ...btnDanger,
+            display: inTelegram && !data.team ? "none" : undefined,
+          }}
         >
           {t("tournament.end")}
         </button>
@@ -424,7 +441,7 @@ function TeamSection({
   );
 
   const pendingPartner = pendingPartnerId
-    ? players.find((p) => p.userId === pendingPartnerId) ?? null
+    ? (players.find((p) => p.userId === pendingPartnerId) ?? null)
     : null;
   const pendingLabel = pendingPartner ? fullName(pendingPartner) : "";
 
@@ -927,238 +944,248 @@ function LiveSection({
         />
       )}
       <div style={{ display: showDisputes ? "none" : "contents" }}>
-      {isAdmin && (
-        <section style={cardStyle}>
-          <h3 style={sectionTitle}>{t("admin.overview")}</h3>
-          <p style={{ margin: 0, fontSize: 14 }}>
-            {t("admin.counts", {
-              teams:
-                (board?.ranked.length ?? 0) + (board?.needsMore.length ?? 0),
-              submitted: matches.filter((m) => m.status === "submitted").length,
-              confirmed: matches.filter((m) => m.status === "confirmed").length,
-              disputed: matches.filter((m) => m.status === "disputed").length,
-            })}
-          </p>
-          <div
-            style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                haptic.selection();
-                setShowDisputes(true);
-              }}
-              style={btnSmall}
-            >
-              {t("admin.openDisputes", {
-                n: matches.filter((m) => m.status === "disputed").length,
+        {isAdmin && (
+          <section style={cardStyle}>
+            <h3 style={sectionTitle}>{t("admin.overview")}</h3>
+            <p style={{ margin: 0, fontSize: 14 }}>
+              {t("admin.counts", {
+                teams:
+                  (board?.ranked.length ?? 0) + (board?.needsMore.length ?? 0),
+                submitted: matches.filter((m) => m.status === "submitted")
+                  .length,
+                confirmed: matches.filter((m) => m.status === "confirmed")
+                  .length,
+                disputed: matches.filter((m) => m.status === "disputed").length,
               })}
-            </button>
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                marginTop: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  haptic.selection();
+                  setShowDisputes(true);
+                }}
+                style={btnSmall}
+              >
+                {t("admin.openDisputes", {
+                  n: matches.filter((m) => m.status === "disputed").length,
+                })}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void downloadAuthed(
+                    `/api/tournaments/${tournamentId}/bbq-export`,
+                    `bbq-${tournamentId}.csv`,
+                  )
+                }
+                style={btnSmall}
+              >
+                {t("admin.exportBbq")}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void downloadAuthed(
+                    `/api/tournaments/${tournamentId}/results-export`,
+                    `results-${tournamentId}.csv`,
+                  )
+                }
+                style={btnSmall}
+              >
+                {t("admin.exportResults")}
+              </button>
+            </div>
+          </section>
+        )}
+        <section style={cardStyle}>
+          <h3 style={sectionTitle}>{t("live.submit")}</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <label style={{ fontSize: 13, opacity: 0.8 }}>
+              {t("live.opponent")}
+            </label>
+            <select
+              value={opponentId}
+              onChange={(e) => setOpponentId(e.target.value)}
+              disabled={busy}
+              style={inputStyle}
+            >
+              <option value="">{t("live.pickOpponent")}</option>
+              {opponents.map((o) => (
+                <option key={o.teamId} value={o.teamId}>
+                  {teamLabel(o)} — {o.matchesPlayed}
+                </option>
+              ))}
+            </select>
+            <SetInputs
+              label={t("live.set", { n: 1 })}
+              a={s1a}
+              b={s1b}
+              setA={setS1a}
+              setB={setS1b}
+              disabled={busy}
+            />
+            <SetInputs
+              label={t("live.set", { n: 2 })}
+              a={s2a}
+              b={s2b}
+              setA={setS2a}
+              setB={setS2b}
+              disabled={busy}
+            />
+            <SetInputs
+              label={t("live.set", { n: 3 })}
+              a={s3a}
+              b={s3b}
+              setA={setS3a}
+              setB={setS3b}
+              disabled={busy}
+            />
             <button
               type="button"
-              onClick={() =>
-                void downloadAuthed(
-                  `/api/tournaments/${tournamentId}/bbq-export`,
-                  `bbq-${tournamentId}.csv`,
-                )
-              }
-              style={btnSmall}
+              onClick={() => void submitMatch()}
+              disabled={busy}
+              style={{
+                ...btnPrimary,
+                display: inTelegram ? "none" : undefined,
+              }}
             >
-              {t("admin.exportBbq")}
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                void downloadAuthed(
-                  `/api/tournaments/${tournamentId}/results-export`,
-                  `results-${tournamentId}.csv`,
-                )
-              }
-              style={btnSmall}
-            >
-              {t("admin.exportResults")}
+              {t("live.submitMatch")}
             </button>
           </div>
         </section>
-      )}
-      <section style={cardStyle}>
-        <h3 style={sectionTitle}>{t("live.submit")}</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <label style={{ fontSize: 13, opacity: 0.8 }}>
-            {t("live.opponent")}
-          </label>
-          <select
-            value={opponentId}
-            onChange={(e) => setOpponentId(e.target.value)}
-            disabled={busy}
-            style={inputStyle}
-          >
-            <option value="">{t("live.pickOpponent")}</option>
-            {opponents.map((o) => (
-              <option key={o.teamId} value={o.teamId}>
-                {teamLabel(o)} — {o.matchesPlayed}
-              </option>
-            ))}
-          </select>
-          <SetInputs
-            label={t("live.set", { n: 1 })}
-            a={s1a}
-            b={s1b}
-            setA={setS1a}
-            setB={setS1b}
-            disabled={busy}
-          />
-          <SetInputs
-            label={t("live.set", { n: 2 })}
-            a={s2a}
-            b={s2b}
-            setA={setS2a}
-            setB={setS2b}
-            disabled={busy}
-          />
-          <SetInputs
-            label={t("live.set", { n: 3 })}
-            a={s3a}
-            b={s3b}
-            setA={setS3a}
-            setB={setS3b}
-            disabled={busy}
-          />
-          <button
-            type="button"
-            onClick={() => void submitMatch()}
-            disabled={busy}
-            style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
-          >
-            {t("live.submitMatch")}
-          </button>
-        </div>
-      </section>
 
-      <section style={cardStyle}>
-        <h3 style={sectionTitle}>{t("live.recent")}</h3>
-        {matches.length === 0 ? (
-          <p style={{ opacity: 0.7 }}>{t("live.noMatches")}</p>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {matches.slice(0, 20).map((m) => {
-              const involvesMe =
-                m.teamAId === myTeam.id || m.teamBId === myTeam.id;
-              const iSubmitted =
-                m.submittedByUserId === myTeam.players[0]?.userId ||
-                m.submittedByUserId === myTeam.players[1]?.userId;
-              const canConfirm =
-                involvesMe && m.status === "submitted" && !iSubmitted;
-              const canDispute = involvesMe && m.status !== "disputed";
-              return (
-                <li key={m.id} style={listRow}>
-                  <span style={{ fontSize: 13 }}>
-                    {teamLabelById(m.teamAId)} vs {teamLabelById(m.teamBId)}
-                    {" — "}
-                    {m.sets.map((s) => `${s.a}-${s.b}`).join(", ")}
-                    {"  "}
-                    <em style={{ opacity: 0.7 }}>
-                      [{t(`live.matchStatus.${m.status}`)}]
-                    </em>
-                  </span>
-                  <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {canConfirm && (
-                      <button
-                        type="button"
-                        onClick={() => void confirmMatch(m.id)}
-                        disabled={busy}
-                        style={btnSmall}
-                      >
-                        {t("live.confirm")}
-                      </button>
-                    )}
-                    {canDispute && (
-                      <button
-                        type="button"
-                        onClick={() => void disputeMatch(m.id)}
-                        disabled={busy}
-                        style={btnSmall}
-                      >
-                        {t("live.dispute")}
-                      </button>
-                    )}
-                    {isAdmin && m.status === "disputed" && (
-                      <button
-                        type="button"
-                        onClick={() => void adminForceConfirm(m.id)}
-                        disabled={busy}
-                        style={btnSmall}
-                      >
-                        {t("admin.resolveConfirm")}
-                      </button>
-                    )}
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => void adminEditMatch(m)}
-                        disabled={busy}
-                        style={btnSmall}
-                      >
-                        {t("admin.edit")}
-                      </button>
-                    )}
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => void adminDeleteMatch(m)}
-                        disabled={busy}
-                        style={btnSmallDanger}
-                      >
-                        {t("admin.delete")}
-                      </button>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      {board && (
         <section style={cardStyle}>
-          <h3 style={sectionTitle}>{t("live.leaderboard")}</h3>
-          {board.ranked.length === 0 && board.needsMore.length === 0 ? (
-            <p style={{ opacity: 0.7 }}>{t("live.noTeams")}</p>
+          <h3 style={sectionTitle}>{t("live.recent")}</h3>
+          {matches.length === 0 ? (
+            <p style={{ opacity: 0.7 }}>{t("live.noMatches")}</p>
           ) : (
-            <>
-              <LeaderboardTable rows={board.ranked} />
-              {board.needsMore.length > 0 && (
-                <>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      opacity: 0.7,
-                      margin: "8px 0 4px",
-                    }}
-                  >
-                    {t("live.needsMore", {
-                      n: board.minMatchesForRanking,
-                    })}
-                  </p>
-                  <LeaderboardTable rows={board.needsMore} faded />
-                </>
-              )}
-            </>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {matches.slice(0, 20).map((m) => {
+                const involvesMe =
+                  m.teamAId === myTeam.id || m.teamBId === myTeam.id;
+                const iSubmitted =
+                  m.submittedByUserId === myTeam.players[0]?.userId ||
+                  m.submittedByUserId === myTeam.players[1]?.userId;
+                const canConfirm =
+                  involvesMe && m.status === "submitted" && !iSubmitted;
+                const canDispute = involvesMe && m.status !== "disputed";
+                return (
+                  <li key={m.id} style={listRow}>
+                    <span style={{ fontSize: 13 }}>
+                      {teamLabelById(m.teamAId)} vs {teamLabelById(m.teamBId)}
+                      {" — "}
+                      {m.sets.map((s) => `${s.a}-${s.b}`).join(", ")}
+                      {"  "}
+                      <em style={{ opacity: 0.7 }}>
+                        [{t(`live.matchStatus.${m.status}`)}]
+                      </em>
+                    </span>
+                    <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {canConfirm && (
+                        <button
+                          type="button"
+                          onClick={() => void confirmMatch(m.id)}
+                          disabled={busy}
+                          style={btnSmall}
+                        >
+                          {t("live.confirm")}
+                        </button>
+                      )}
+                      {canDispute && (
+                        <button
+                          type="button"
+                          onClick={() => void disputeMatch(m.id)}
+                          disabled={busy}
+                          style={btnSmall}
+                        >
+                          {t("live.dispute")}
+                        </button>
+                      )}
+                      {isAdmin && m.status === "disputed" && (
+                        <button
+                          type="button"
+                          onClick={() => void adminForceConfirm(m.id)}
+                          disabled={busy}
+                          style={btnSmall}
+                        >
+                          {t("admin.resolveConfirm")}
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => void adminEditMatch(m)}
+                          disabled={busy}
+                          style={btnSmall}
+                        >
+                          {t("admin.edit")}
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => void adminDeleteMatch(m)}
+                          disabled={busy}
+                          style={btnSmallDanger}
+                        >
+                          {t("admin.delete")}
+                        </button>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
-      )}
 
-      {error && (
-        <p
-          style={{
-            color: "var(--tg-theme-destructive-text-color, #c00)",
-            fontSize: 13,
-          }}
-        >
-          {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
-        </p>
-      )}
+        {board && (
+          <section style={cardStyle}>
+            <h3 style={sectionTitle}>{t("live.leaderboard")}</h3>
+            {board.ranked.length === 0 && board.needsMore.length === 0 ? (
+              <p style={{ opacity: 0.7 }}>{t("live.noTeams")}</p>
+            ) : (
+              <>
+                <LeaderboardTable rows={board.ranked} />
+                {board.needsMore.length > 0 && (
+                  <>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        opacity: 0.7,
+                        margin: "8px 0 4px",
+                      }}
+                    >
+                      {t("live.needsMore", {
+                        n: board.minMatchesForRanking,
+                      })}
+                    </p>
+                    <LeaderboardTable rows={board.needsMore} faded />
+                  </>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
+        {error && (
+          <p
+            style={{
+              color: "var(--tg-theme-destructive-text-color, #c00)",
+              fontSize: 13,
+            }}
+          >
+            {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
+          </p>
+        )}
       </div>
     </>
   );
