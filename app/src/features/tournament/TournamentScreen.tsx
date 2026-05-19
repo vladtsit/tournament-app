@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiClientError, downloadAuthed } from "../../apiClient";
 import { haptic, storage, isInTelegram } from "../../telegram";
@@ -62,6 +62,10 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const draftNameRef = useRef("");
+  useEffect(() => {
+    draftNameRef.current = draftName;
+  }, [draftName]);
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -84,7 +88,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     setBusy(true);
     setError(null);
     try {
-      const name = draftName.trim();
+      const name = draftNameRef.current.trim();
       await api("/api/tournaments", {
         method: "POST",
         body: name ? { name } : {},
@@ -98,7 +102,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     } finally {
       setBusy(false);
     }
-  }, [reload, draftName]);
+  }, [reload]);
 
   const upsertRegistration = useCallback(
     async (playing: boolean, bbq: boolean): Promise<void> => {
