@@ -829,7 +829,9 @@ function LiveSection({
               disputed: matches.filter((m) => m.status === "disputed").length,
             })}
           </p>
-          <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+          <div
+            style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}
+          >
             <button
               type="button"
               onClick={() =>

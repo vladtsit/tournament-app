@@ -31,14 +31,14 @@ cp api/local.settings.json.example api/local.settings.json   # fill in secrets
 npm run dev                                                  # SWA emulator on http://localhost:4280
 ```
 
-| Command            | What it does                                        |
-| ------------------ | --------------------------------------------------- |
-| `npm run dev`      | SWA emulator → proxies SPA (5173) and API (7071)    |
-| `npm run dev:app`  | Vite only                                           |
-| `npm run dev:api`  | `func start` only                                   |
-| `npm run build`    | Build SPA + API                                     |
-| `npm run lint`     | Lint both workspaces                                |
-| `npm run typecheck`| `tsc --noEmit` both workspaces                      |
+| Command             | What it does                                     |
+| ------------------- | ------------------------------------------------ |
+| `npm run dev`       | SWA emulator → proxies SPA (5173) and API (7071) |
+| `npm run dev:app`   | Vite only                                        |
+| `npm run dev:api`   | `func start` only                                |
+| `npm run build`     | Build SPA + API                                  |
+| `npm run lint`      | Lint both workspaces                             |
+| `npm run typecheck` | `tsc --noEmit` both workspaces                   |
 
 ## Deployment
 

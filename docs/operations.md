@@ -8,17 +8,17 @@ and the implementation plan at
 
 ## Environment overview
 
-| Resource         | Name / value                                            |
-| ---------------- | ------------------------------------------------------- |
-| Resource group   | `rg-freetier`                                           |
-| Static Web App   | `swa-free`                                              |
-| Public host      | `green-ground-018c96b03.7.azurestaticapps.net`          |
-| Cosmos account   | `cdb-free` (serverless, free tier)                      |
-| Cosmos database  | `padel`                                                 |
-| Telegram bot     | `@tournamentes_bot`                                     |
-| Mini app path    | `https://t.me/tournamentes_bot/app`                     |
-| App sub-path     | `/tournamentes/`                                        |
-| Repository       | `vladtsit/tournament-app` (`main` branch auto-deploys)  |
+| Resource        | Name / value                                           |
+| --------------- | ------------------------------------------------------ |
+| Resource group  | `rg-freetier`                                          |
+| Static Web App  | `swa-free`                                             |
+| Public host     | `green-ground-018c96b03.7.azurestaticapps.net`         |
+| Cosmos account  | `cdb-free` (serverless, free tier)                     |
+| Cosmos database | `padel`                                                |
+| Telegram bot    | `@tournamentes_bot`                                    |
+| Mini app path   | `https://t.me/tournamentes_bot/app`                    |
+| App sub-path    | `/tournamentes/`                                       |
+| Repository      | `vladtsit/tournament-app` (`main` branch auto-deploys) |
 
 All SWA configuration lives in `staticwebapp.config.json`. The Functions
 runtime is **Node 22 LTS** on the SWA-managed Linux Consumption plan.
@@ -73,18 +73,18 @@ trade-off accepted per the implementation plan).
 az staticwebapp appsettings list -n swa-free -g rg-freetier -o table
 ```
 
-| Setting                                  | Used by                                |
-| ---------------------------------------- | -------------------------------------- |
-| `TELEGRAM_BOT_TOKEN`                     | webhook + auth (bot username, sendMessage) |
-| `TELEGRAM_BOT_USERNAME`                  | mini-app launch URL                    |
-| `TELEGRAM_WEBHOOK_SECRET`                | webhook handshake                      |
-| `JWT_SECRET`                             | session token HS256 signature          |
-| `JWT_TTL_SECONDS` (optional, default 14400) | session lifetime                       |
-| `AUTH_DATE_MAX_AGE_SECONDS` (default 86400) | `initData` freshness window            |
-| `COSMOS_ENDPOINT`                        | Cosmos client                          |
-| `COSMOS_KEY`                             | Cosmos client                          |
-| `COSMOS_DATABASE_ID`                     | Cosmos client (`padel`)                |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING`  | optional telemetry                     |
+| Setting                                     | Used by                                    |
+| ------------------------------------------- | ------------------------------------------ |
+| `TELEGRAM_BOT_TOKEN`                        | webhook + auth (bot username, sendMessage) |
+| `TELEGRAM_BOT_USERNAME`                     | mini-app launch URL                        |
+| `TELEGRAM_WEBHOOK_SECRET`                   | webhook handshake                          |
+| `JWT_SECRET`                                | session token HS256 signature              |
+| `JWT_TTL_SECONDS` (optional, default 14400) | session lifetime                           |
+| `AUTH_DATE_MAX_AGE_SECONDS` (default 86400) | `initData` freshness window                |
+| `COSMOS_ENDPOINT`                           | Cosmos client                              |
+| `COSMOS_KEY`                                | Cosmos client                              |
+| `COSMOS_DATABASE_ID`                        | Cosmos client (`padel`)                    |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING`     | optional telemetry                         |
 
 Rotation steps for any secret:
 
@@ -165,10 +165,10 @@ data.**
 Admin-only endpoints, accessible from the **Admin overview** card on the
 Current tab:
 
-| Endpoint                                              | What it returns                                                |
-| ----------------------------------------------------- | -------------------------------------------------------------- |
-| `GET /api/tournaments/{tournamentId}/bbq-export`      | `userId,firstName,lastName,playing,bbq,updatedAt`              |
-| `GET /api/tournaments/{tournamentId}/results-export`  | `matchId,submittedAt,status,teamA,teamB,set1..set3,winner,…`   |
+| Endpoint                                             | What it returns                                              |
+| ---------------------------------------------------- | ------------------------------------------------------------ |
+| `GET /api/tournaments/{tournamentId}/bbq-export`     | `userId,firstName,lastName,playing,bbq,updatedAt`            |
+| `GET /api/tournaments/{tournamentId}/results-export` | `matchId,submittedAt,status,teamA,teamB,set1..set3,winner,…` |
 
 Both honor the same `X-Session-Token` auth as the rest of the API; the
 front-end downloads the file via `fetch` + `Blob` so the browser triggers

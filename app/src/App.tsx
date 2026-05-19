@@ -72,7 +72,9 @@ export function App(): JSX.Element {
 
       {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
 
-      <section style={{ marginTop: 24, display: showHelp ? "none" : undefined }}>
+      <section
+        style={{ marginTop: 24, display: showHelp ? "none" : undefined }}
+      >
         {auth.status === "idle" && <p>…</p>}
         {auth.status === "authenticating" && <p>{t("app.authenticating")}</p>}
         {auth.status === "not_in_telegram" && (
