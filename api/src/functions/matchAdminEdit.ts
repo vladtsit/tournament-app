@@ -46,8 +46,7 @@ app.http("matchAdminEdit", {
     try {
       ctx = await requireGroupAdmin(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const matchId = req.params["matchId"];

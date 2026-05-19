@@ -30,8 +30,7 @@ app.http("availableOpponents", {
     try {
       ctx = await requireGroup(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const tournamentId = req.params["tournamentId"];

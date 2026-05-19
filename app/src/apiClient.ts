@@ -3,6 +3,8 @@
 
 let sessionToken: string | null = null;
 let language = "en";
+let reauth: (() => Promise<string | null>) | null = null;
+let reauthInflight: Promise<string | null> | null = null;
 
 export function setSessionToken(token: string | null): void {
   sessionToken = token;
@@ -10,6 +12,18 @@ export function setSessionToken(token: string | null): void {
 
 export function setLanguage(lang: string): void {
   language = lang;
+}
+
+/**
+ * Register a callback the client can invoke when an API call returns 401 with
+ * `invalid_token`. The callback should re-run the Telegram handshake and
+ * return the new session JWT (or `null` if reauth failed). Only one re-auth
+ * runs at a time even under concurrent 401s.
+ */
+export function setReauthHandler(
+  fn: (() => Promise<string | null>) | null,
+): void {
+  reauth = fn;
 }
 
 /**
@@ -67,6 +81,14 @@ export async function api<T = unknown>(
   path: string,
   opts: RequestOptions = {},
 ): Promise<T> {
+  return await apiInternal<T>(path, opts, false);
+}
+
+async function apiInternal<T>(
+  path: string,
+  opts: RequestOptions,
+  isRetry: boolean,
+): Promise<T> {
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Accept-Language": language,
@@ -96,11 +118,26 @@ export async function api<T = unknown>(
     const err = (
       parsed as { error?: { code?: string; message?: string } } | null
     )?.error;
-    throw new ApiClientError(
-      res.status,
-      err?.code ?? "http_error",
-      err?.message ?? res.statusText,
-    );
+    const code = err?.code ?? "http_error";
+    // Session expired (4 h JWT TTL). Re-run the Telegram handshake once and
+    // retry with the new token. The original Idempotency-Key (if any) is
+    // re-used so the retry hits the stored idempotency record on the server.
+    if (
+      !isRetry &&
+      res.status === 401 &&
+      (code === "invalid_token" || code === "missing_token") &&
+      reauth &&
+      path !== "/api/auth/telegram"
+    ) {
+      reauthInflight ??= reauth().finally(() => {
+        reauthInflight = null;
+      });
+      const fresh = await reauthInflight;
+      if (fresh) {
+        return await apiInternal<T>(path, opts, true);
+      }
+    }
+    throw new ApiClientError(res.status, code, err?.message ?? res.statusText);
   }
   return parsed as T;
 }

@@ -20,8 +20,7 @@ app.http("matchConfirm", {
     try {
       ctx = await requireGroup(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const matchId = req.params["matchId"];
@@ -61,7 +60,14 @@ app.http("matchConfirm", {
     if (myTeamId !== match.teamAId && myTeamId !== match.teamBId) {
       return jsonError(403, "not_a_participant", "Not in this match.");
     }
-    if (ctx.userId === match.submittedByUserId) {
+    // The opposing team must confirm. Prefer the team-id check; fall back to
+    // the user-id check for legacy docs that pre-date `submittedByTeamId`.
+    const submitterTeamId = match.submittedByTeamId;
+    const isOwnTeamSubmission =
+      submitterTeamId !== undefined
+        ? myTeamId === submitterTeamId
+        : ctx.userId === match.submittedByUserId;
+    if (isOwnTeamSubmission) {
       return jsonError(
         403,
         "cannot_confirm_own_submission",

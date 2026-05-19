@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, ApiClientError, setSessionToken } from "../apiClient";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  api,
+  ApiClientError,
+  setReauthHandler,
+  setSessionToken,
+} from "../apiClient";
 import { getWebApp, isInTelegram } from "../telegram";
 
 export interface AuthUser {
@@ -59,6 +64,9 @@ export function useTelegramAuth(): AuthState {
     status: "idle",
     groups: [],
   });
+  // Remember the most recently picked group so a silent re-auth (after a 401
+  // when the JWT expires mid-session) lands the user back on the same group.
+  const lastGroupIdRef = useRef<string | undefined>(undefined);
 
   const authenticate = useCallback(async (groupId?: string): Promise<void> => {
     const wa = getWebApp();
@@ -72,6 +80,7 @@ export function useTelegramAuth(): AuthState {
           : { initData: wa.initData },
       });
       setSessionToken(res.token);
+      if (res.groupId) lastGroupIdRef.current = res.groupId;
       const group: AuthGroup | null = res.group
         ? {
             ...res.group,
@@ -95,6 +104,31 @@ export function useTelegramAuth(): AuthState {
       const code = err instanceof ApiClientError ? err.code : "unknown";
       setState({ status: "error", errorCode: code, groups: [] });
     }
+  }, []);
+
+  // Silent reauth path used by apiClient when a request returns 401. Runs
+  // the Telegram handshake again and resolves with the new token (or null on
+  // failure) so the original request can be retried once.
+  useEffect(() => {
+    setReauthHandler(async () => {
+      const wa = getWebApp();
+      if (!wa) return null;
+      try {
+        const body = lastGroupIdRef.current
+          ? { initData: wa.initData, groupId: lastGroupIdRef.current }
+          : { initData: wa.initData };
+        const res = await api<AuthResponse>("/api/auth/telegram", {
+          method: "POST",
+          body,
+        });
+        setSessionToken(res.token);
+        if (res.groupId) lastGroupIdRef.current = res.groupId;
+        return res.token;
+      } catch {
+        return null;
+      }
+    });
+    return () => setReauthHandler(null);
   }, []);
 
   useEffect(() => {

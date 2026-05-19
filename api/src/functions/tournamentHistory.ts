@@ -39,8 +39,7 @@ app.http("tournamentHistory", {
     try {
       ctx = await requireGroup(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const limitParam = Number(req.query.get("limit") ?? 20);
@@ -116,11 +115,3 @@ app.http("tournamentHistory", {
     };
   },
 });
-
-function jsonError(
-  status: number,
-  code: string,
-  message: string,
-): HttpResponseInit {
-  return { status, jsonBody: { error: { code, message } } };
-}

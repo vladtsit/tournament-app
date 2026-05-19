@@ -13,6 +13,11 @@ export interface MatchDoc {
   teamAId: string;
   teamBId: string;
   submittedByUserId: string;
+  // Team that the submitter was on at submit time. Used by matchConfirm to
+  // ensure the *opposing* team confirms (not just a different user on the
+  // same team). Optional only for backward-compat with legacy docs created
+  // before this field was introduced — fall back to submittedByUserId then.
+  submittedByTeamId?: string;
   sets: Array<{ a: number; b: number }>;
   winner: "A" | "B";
   setsA: number;

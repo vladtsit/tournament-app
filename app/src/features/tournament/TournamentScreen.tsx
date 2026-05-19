@@ -205,7 +205,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
         await api(`/api/tournaments/${data.tournament.id}/registrations`, {
           method: "POST",
           body: { playing, bbq },
-          idempotencyKey: `reg-${data.tournament.id}-${Date.now()}`,
+          idempotencyKey: `reg-${data.tournament.id}-${crypto.randomUUID()}`,
         });
         haptic.selection();
         await reload();
@@ -667,7 +667,7 @@ function TeamSection({
         await api(`/api/tournaments/${tournamentId}/teams`, {
           method: "POST",
           body: { partnerUserId },
-          idempotencyKey: `team-${tournamentId}-${partnerUserId}-${Date.now()}`,
+          idempotencyKey: `team-${tournamentId}-${partnerUserId}-${crypto.randomUUID()}`,
         });
         void storage.set(`lastPartner_${groupId}`, partnerUserId);
         setPendingPartnerId(null);
@@ -714,7 +714,7 @@ function TeamSection({
     try {
       await api(`/api/tournaments/${tournamentId}/teams/${team.id}`, {
         method: "DELETE",
-        idempotencyKey: `leave-${tournamentId}-${team.id}-${Date.now()}`,
+        idempotencyKey: `leave-${tournamentId}-${team.id}-${crypto.randomUUID()}`,
       });
       haptic.notify("success");
       await onChange();
@@ -961,7 +961,7 @@ function LiveSection({
       await api(`/api/tournaments/${tournamentId}/matches`, {
         method: "POST",
         body: { opponentTeamId: opponentId, sets },
-        idempotencyKey: `match-${tournamentId}-${opponentId}-${Date.now()}`,
+        idempotencyKey: `match-${tournamentId}-${opponentId}-${crypto.randomUUID()}`,
       });
       setS1a("");
       setS1b("");

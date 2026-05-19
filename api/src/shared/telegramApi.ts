@@ -24,13 +24,34 @@ interface TelegramResponse<T> {
   error_code?: number;
 }
 
+// Hard cap on a single Telegram API call. SWA managed Functions have a
+// generous ceiling, but a hung outbound fetch would still hold the invocation
+// (and starve concurrency). 8 s is well above Telegram's normal p99.
+const TELEGRAM_CALL_TIMEOUT_MS = 8_000;
+
 async function call<T>(method: string, payload: unknown): Promise<T> {
   const url = `${API_BASE}/bot${env.telegramBotToken}/${method}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TELEGRAM_CALL_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const aborted =
+      (err as { name?: string } | undefined)?.name === "AbortError";
+    throw new TelegramApiError(
+      method,
+      aborted ? 408 : 0,
+      aborted ? "timeout" : "network_error",
+    );
+  } finally {
+    clearTimeout(timer);
+  }
   let data: TelegramResponse<T>;
   try {
     data = (await res.json()) as TelegramResponse<T>;

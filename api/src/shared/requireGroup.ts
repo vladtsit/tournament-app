@@ -1,4 +1,4 @@
-import type { HttpRequest } from "@azure/functions";
+import type { HttpRequest, HttpResponseInit } from "@azure/functions";
 import { requireAuth, AuthError, type AuthContext } from "./requireAuth.js";
 import { containers_ } from "./cosmos.js";
 
@@ -65,7 +65,24 @@ export async function requireGroupAdmin(
   return { ...ctx, isAdmin: true };
 }
 
-export function mapGroupContextError(err: unknown): {
+export function mapGroupContextError(err: unknown): HttpResponseInit {
+  const meta = classifyGroupContextError(err);
+  const headers: Record<string, string> = {};
+  if (meta.status === 429 && meta.retryAfterSec !== undefined) {
+    headers["Retry-After"] = String(meta.retryAfterSec);
+  }
+  const body: {
+    error: { code: string; message: string; retryAfterSec?: number };
+  } = {
+    error: { code: meta.code, message: meta.code },
+  };
+  if (meta.retryAfterSec !== undefined) {
+    body.error.retryAfterSec = meta.retryAfterSec;
+  }
+  return { status: meta.status, headers, jsonBody: body };
+}
+
+function classifyGroupContextError(err: unknown): {
   status: number;
   code: string;
   retryAfterSec?: number;

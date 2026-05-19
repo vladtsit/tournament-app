@@ -51,8 +51,7 @@ app.http("tournamentCurrent", {
     try {
       ctx = await requireGroup(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const q = await containers_
@@ -129,12 +128,4 @@ async function countRegistrations(
     )
     .fetchAll();
   return r.resources[0] ?? { playing: 0, bbq: 0 };
-}
-
-function jsonError(
-  status: number,
-  code: string,
-  message: string,
-): HttpResponseInit {
-  return { status, jsonBody: { error: { code, message } } };
 }

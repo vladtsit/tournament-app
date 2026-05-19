@@ -48,8 +48,7 @@ app.http("tournamentEnd", {
     try {
       ctx = await requireGroupAdmin(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const tournamentId = req.params["tournamentId"];
@@ -136,7 +135,7 @@ app.http("tournamentEnd", {
     );
 
     const deltas = computePlayerDeltas(standings);
-    await applyPlayerDeltas(ctx.groupId, deltas);
+    await applyPlayerDeltas(ctx.groupId, tournamentId, deltas);
 
     const now = new Date().toISOString();
     const updated: TournamentDoc = {

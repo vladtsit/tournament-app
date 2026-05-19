@@ -57,8 +57,7 @@ app.http("matchSubmit", {
     try {
       ctx = await requireGroup(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const tournamentId = req.params["tournamentId"];
@@ -182,6 +181,7 @@ app.http("matchSubmit", {
             teamAId,
             teamBId,
             submittedByUserId: ctx.userId,
+            submittedByTeamId: slot.teamId,
             sets:
               teamAId === slot.teamId
                 ? setsInput

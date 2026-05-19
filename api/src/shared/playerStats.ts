@@ -17,6 +17,11 @@ export interface PlayerStatsDoc {
   podiums: { first: number; second: number; third: number };
   overallScore: number;
   lastUpdatedAt: string;
+  // Last tournament whose deltas were applied to this row. Used as an
+  // idempotency guard: tournamentEnd may be partially-applied if a single
+  // upsert throws; retrying must not double-count for rows that already
+  // received the delta.
+  lastAppliedTournamentId?: string;
 }
 
 export function playerStatsId(userId: string): string {
@@ -42,11 +47,12 @@ function emptyStats(groupId: string, userId: string): PlayerStatsDoc {
 
 /**
  * Apply per-player deltas to player_stats (upsert; create if missing).
- * Idempotency: caller must guard against double-apply (we never re-apply for
- * the same tournament because tournamentEnd guards on `status === 'live'`).
+ * Per-row idempotency: rows whose `lastAppliedTournamentId === tournamentId`
+ * are skipped, so a retry after partial failure is safe.
  */
 export async function applyPlayerDeltas(
   groupId: string,
+  tournamentId: string,
   deltas: PlayerPointsDelta[],
 ): Promise<void> {
   const now = new Date().toISOString();
@@ -59,6 +65,10 @@ export async function applyPlayerDeltas(
         .read<PlayerStatsDoc>()
         .catch(() => null);
       const cur = existing?.resource ?? emptyStats(groupId, d.userId);
+      if (cur.lastAppliedTournamentId === tournamentId) {
+        // Already applied for this tournament — retry-safe no-op.
+        return;
+      }
       const updated: PlayerStatsDoc = {
         ...cur,
         tournamentsPlayed: cur.tournamentsPlayed + 1,
@@ -74,6 +84,7 @@ export async function applyPlayerDeltas(
         },
         overallScore: round2(cur.overallScore + d.pointsAwarded),
         lastUpdatedAt: now,
+        lastAppliedTournamentId: tournamentId,
       };
       await containers_.playerStats().items.upsert(updated);
     }),

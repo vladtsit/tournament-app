@@ -21,8 +21,7 @@ app.http("overallScore", {
     try {
       ctx = await requireGroup(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const limitParam = Number(req.query.get("limit") ?? 50);
@@ -90,11 +89,3 @@ app.http("overallScore", {
     };
   },
 });
-
-function jsonError(
-  status: number,
-  code: string,
-  message: string,
-): HttpResponseInit {
-  return { status, jsonBody: { error: { code, message } } };
-}

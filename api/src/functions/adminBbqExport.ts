@@ -27,8 +27,7 @@ app.http("adminBbqExport", {
     try {
       ctx = await requireGroupAdmin(req);
     } catch (err) {
-      const m = mapGroupContextError(err);
-      return jsonError(m.status, m.code, m.code);
+      return mapGroupContextError(err);
     }
 
     const tournamentId = req.params["tournamentId"];
