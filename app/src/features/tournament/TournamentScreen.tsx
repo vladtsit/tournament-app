@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiClientError } from "../../apiClient";
+import { api, ApiClientError, downloadAuthed } from "../../apiClient";
 import { haptic, storage, isInTelegram } from "../../telegram";
 import { useMainButton } from "../../hooks/useMainButton";
 
@@ -829,6 +829,32 @@ function LiveSection({
               disputed: matches.filter((m) => m.status === "disputed").length,
             })}
           </p>
+          <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() =>
+                void downloadAuthed(
+                  `/api/tournaments/${tournamentId}/bbq-export`,
+                  `bbq-${tournamentId}.csv`,
+                )
+              }
+              style={btnSmall}
+            >
+              {t("admin.exportBbq")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void downloadAuthed(
+                  `/api/tournaments/${tournamentId}/results-export`,
+                  `results-${tournamentId}.csv`,
+                )
+              }
+              style={btnSmall}
+            >
+              {t("admin.exportResults")}
+            </button>
+          </div>
         </section>
       )}
       <section style={cardStyle}>

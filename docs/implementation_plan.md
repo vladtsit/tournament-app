@@ -282,9 +282,10 @@ Goal: ship-quality UX, admin tooling, exports, light telemetry.
 - ⏳ **CloudStorage** for _last group_ / _last teammate_ / _last opponent_ — `lastTab` + `lastPartner_{groupId}` shipped; `lastOpponent_{tournamentId}` still TODO.
 - 🟡 **MainButton / BottomButton** integration: MainButton drives match submission inside Telegram; remaining flows still use inline buttons.
 - 🟡 **Admin dashboard polish**: counts banner (teams + match status counts), `PATCH /api/matches/{id}` (admin edit + resolve dispute), `DELETE /api/matches/{id}` (admin remove) wired into the live match list. Dispute queue itself still uses the inline list (no separate page).
-- ⏳ **CSV exports** `GET /api/admin/bbq-export`, `GET /api/admin/results-export`.
-- ⏳ **App Insights** Free-tier wiring (1 GB/month cap), structured logs.
-- ⏳ **README + ops docs**: webhook re-registration, secret rotation, "how to add a group".
+- ✅ **CSV exports** `GET /api/tournaments/{id}/bbq-export`, `GET /api/tournaments/{id}/results-export` (admin-only; download buttons in Admin overview).
+- ✅ **App Insights** Free-tier wiring: opt-in via `APPLICATIONINSIGHTS_CONNECTION_STRING` (`api/src/shared/telemetry.ts`); HTTP requests + exceptions only, no live metrics, cloud role `padel-api`.
+- ✅ **In-app Help** (`?` button → `HelpScreen`) with 11 localised sections (intro / registration / pairing / live / matches / leaderboard / history / overall / admin / language / privacy) in en/es/ru.
+- ✅ **README + ops docs**: `README.md` links to `docs/operations.md`, which covers webhook (re-)registration, secret rotation, group/admin management, App Insights enablement, CSV exports, and useful Cosmos one-liners.
 
 **Steps**
 

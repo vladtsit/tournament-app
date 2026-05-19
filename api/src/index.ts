@@ -1,4 +1,9 @@
 import { app } from "@azure/functions";
+import { maybeStartTelemetry } from "./shared/telemetry.js";
+
+// App Insights is initialised before any handler imports so it can patch the
+// HTTP stack. No-op when APPLICATIONINSIGHTS_CONNECTION_STRING is unset.
+maybeStartTelemetry();
 
 // v4 programming model: register HTTP functions here (one import per endpoint).
 import "./functions/config.js";
@@ -19,6 +24,8 @@ import "./functions/matchConfirm.js";
 import "./functions/matchDispute.js";
 import "./functions/matchAdminEdit.js";
 import "./functions/matchAdminDelete.js";
+import "./functions/adminBbqExport.js";
+import "./functions/adminResultsExport.js";
 import "./functions/availableOpponents.js";
 import "./functions/tournamentLeaderboard.js";
 import "./functions/tournamentHistory.js";

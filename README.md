@@ -45,3 +45,20 @@ npm run dev                                                  # SWA emulator on h
 GitHub Actions workflow at `.github/workflows/azure-static-web-apps.yml` builds the SPA and managed Functions and deploys to Azure Static Web Apps.
 
 See [§7.2 — Backend](padel_telegram_mini_app_requirements.md) and the runtime notes in the spec header for the **Node 22 → Node 24 (Flex Consumption) migration plan** (target Q1 2027 when Node 22 nears EOL).
+
+## In-app Help
+
+Tap the `?` button in the top-right of the app for an overview of every screen
+(registration, pairing, live submission, leaderboard, history, overall ranking,
+admin tools). The help text is localised to EN/ES/RU.
+
+## Operations
+
+Detailed runbook lives at [docs/operations.md](docs/operations.md). Quick
+links:
+
+- Webhook (re-)registration after secret rotation → `docs/operations.md#telegram-webhook`
+- Rotating SWA app settings (Cosmos key, JWT secret, bot token) → `docs/operations.md#secret-rotation`
+- Adding a new group / promoting an admin → `docs/operations.md#adding-a-group`
+- Enabling Application Insights (Free 1 GB/month) → `docs/operations.md#application-insights`
+- Exporting BBQ list and match results → `docs/operations.md#csv-exports`

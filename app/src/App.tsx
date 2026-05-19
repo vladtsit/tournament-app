@@ -12,10 +12,12 @@ import { GroupPicker } from "./features/groups/GroupPicker";
 import { TournamentScreen } from "./features/tournament/TournamentScreen";
 import { HistoryScreen } from "./features/history/HistoryScreen";
 import { OverallScreen } from "./features/history/OverallScreen";
+import { HelpScreen } from "./features/help/HelpScreen";
 
 export function App(): JSX.Element {
   const { t, i18n } = useTranslation();
   const auth = useTelegramAuth();
+  const [showHelp, setShowHelp] = useState(false);
 
   return (
     <main
@@ -37,10 +39,40 @@ export function App(): JSX.Element {
         }}
       >
         <h1 style={{ fontSize: 20, margin: 0 }}>{t("app.title")}</h1>
-        <LanguagePicker current={i18n.language as SupportedLanguage} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => {
+              haptic.selection();
+              setShowHelp((v) => !v);
+            }}
+            aria-label={t("help.title")}
+            title={t("help.title")}
+            style={{
+              border: "1px solid var(--tg-theme-section-separator-color, #ccc)",
+              background: "transparent",
+              color: "inherit",
+              borderRadius: 999,
+              width: 28,
+              height: 28,
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+          >
+            ?
+          </button>
+          <LanguagePicker current={i18n.language as SupportedLanguage} />
+        </div>
       </header>
 
-      <section style={{ marginTop: 24 }}>
+      {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
+
+      <section style={{ marginTop: 24, display: showHelp ? "none" : undefined }}>
         {auth.status === "idle" && <p>…</p>}
         {auth.status === "authenticating" && <p>{t("app.authenticating")}</p>}
         {auth.status === "not_in_telegram" && (

@@ -12,6 +12,31 @@ export function setLanguage(lang: string): void {
   language = lang;
 }
 
+/**
+ * Fetch a file (CSV, etc.) and trigger a browser download. Uses the same
+ * session-token auth header as `api()`.
+ */
+export async function downloadAuthed(
+  path: string,
+  filename: string,
+): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (sessionToken) headers["X-Session-Token"] = sessionToken;
+  const res = await fetch(path, { headers, credentials: "same-origin" });
+  if (!res.ok) {
+    throw new ApiClientError(res.status, "download_failed", res.statusText);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export interface ApiError {
   status: number;
   code: string;

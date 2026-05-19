@@ -135,7 +135,59 @@
     "delete": "Borrar",
     "resolveConfirm": "Marcar confirmado",
     "editPrompt": "Ingresa los sets, ej.: 6-4,3-6,10-7",
-    "deleteConfirm": "¿Borrar este partido ({{score}})? No se puede deshacer."
+    "deleteConfirm": "¿Borrar este partido ({{score}})? No se puede deshacer.",
+    "exportBbq": "Exportar BBQ (CSV)",
+    "exportResults": "Exportar resultados (CSV)"
+  },
+  "help": {
+    "title": "Ayuda",
+    "footer": "Pulsa la flecha atrás o Cerrar para volver.",
+    "sections": {
+      "intro": {
+        "title": "¿Qué es esto?",
+        "body": "Sunday Pádel es un pequeño gestor de torneos para grupos informales. Cada grupo de Telegram organiza sus propios torneos. La app recuerda quién juega, con quién se empareja, cada partido y la clasificación en vivo."
+      },
+      "registration": {
+        "title": "Inscripción",
+        "body": "En la pestaña Actual, activa ‘Juego’ para apuntarte al próximo torneo. Activa ‘BBQ’ si te quedas a comer. Puedes cambiar ambas opciones mientras la inscripción esté abierta."
+      },
+      "teams": {
+        "title": "Formar pareja",
+        "body": "Cuando estés marcado como Juego, verás a todos los demás que buscan compañero. Toca ‘Emparejar’ y confirma — la pareja se forma al instante. La pareja anterior aparece primero con una estrella. Usa ‘Salir del equipo’ si cambias de idea antes de que empiece el torneo."
+      },
+      "live": {
+        "title": "Durante un torneo en vivo",
+        "body": "Cuando el admin inicia el torneo aparece el formulario de partido. Elige al rival, escribe el marcador de cada set y pulsa el botón principal de Telegram (o Enviar). Se requiere al menos un set válido."
+      },
+      "matches": {
+        "title": "Confirmar y disputar",
+        "body": "El equipo rival debe Confirmar tu envío. Si el marcador es incorrecto, cualquiera de los participantes puede Disputarlo y el admin puede arreglarlo o borrarlo. Los envíos se confirman automáticamente a los 30 minutos si nadie actúa."
+      },
+      "leaderboard": {
+        "title": "Clasificación",
+        "body": "Los equipos necesitan jugar varios partidos para entrar en la clasificación (el mínimo lo fija el admin del grupo). Se ordena por porcentaje de victorias, luego ratio de sets y luego ratio de juegos."
+      },
+      "history": {
+        "title": "Pestaña Historial",
+        "body": "Los torneos pasados muestran el podio (top 3) de cada evento para que veas quién ganó qué y cuándo."
+      },
+      "overall": {
+        "title": "Puntuación global",
+        "body": "Cada torneo finalizado otorga puntos de podio (10 / 7 / 5 / 3 / 1) más un pequeño bono por cada victoria. La pestaña Global es la clasificación histórica de tu grupo."
+      },
+      "admin": {
+        "title": "Herramientas de admin",
+        "body": "Los admins del grupo pueden crear torneos, iniciarlos (cierra la inscripción), finalizarlos (congela la clasificación y reparte puntos), editar o borrar resultados, marcar un partido disputado como confirmado y exportar CSV de inscripciones y resultados."
+      },
+      "language": {
+        "title": "Idioma",
+        "body": "Elige tu idioma en el desplegable de arriba — tu elección se recuerda para tu cuenta de Telegram en todos los dispositivos."
+      },
+      "privacy": {
+        "title": "Privacidad",
+        "body": "La app solo guarda lo necesario para organizar los torneos: tu nombre de Telegram, tus inscripciones y los partidos jugados. Nada se comparte fuera de tu grupo."
+      }
+    }
   },
   "overall": {
     "empty": "Aún no hay puntuación global — finaliza un torneo para empezar el ranking.",
