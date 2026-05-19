@@ -86,9 +86,47 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
     }
   }, []);
 
+  // Background refresh without toggling the spinner — used by polling and
+  // visibility listeners so the screen updates silently when a partner pairs
+  // with the caller, when registration counts change, etc.
+  const silentReload = useCallback(async (): Promise<void> => {
+    try {
+      const res = await api<CurrentResponse>("/api/tournaments/current");
+      setData(res);
+    } catch {
+      // ignore — keep last good state
+    }
+  }, []);
+
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  // Auto-refresh while waiting on external state (most commonly: a partner
+  // accepts you onto a team, or registration counts change). Polls every 15s
+  // and also fires when the tab/window regains focus.
+  const tournamentForPoll = data?.tournament ?? null;
+  const shouldPoll =
+    !!tournamentForPoll &&
+    tournamentForPoll.status === "registration_open" &&
+    data?.registration?.playing === true &&
+    !data?.team;
+  useEffect(() => {
+    if (!shouldPoll) return;
+    const id = window.setInterval(() => {
+      void silentReload();
+    }, 15000);
+    const onVisible = (): void => {
+      if (document.visibilityState === "visible") void silentReload();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [shouldPoll, silentReload]);
 
   const createTournament = useCallback(async (): Promise<void> => {
     setBusy(true);
@@ -274,19 +312,52 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <header>
-        <h2 style={{ fontSize: 18, margin: "0 0 4px 0" }}>
-          {data.tournament.name}{" "}
-          <span style={statusBadge(status)}>
-            {t(`tournament.status.${status}`)}
-          </span>
-        </h2>
-        <p style={{ fontSize: 13, opacity: 0.8, margin: 0 }}>
-          {t("tournament.counts", {
-            playing: data.counts.playing,
-            bbq: data.counts.bbq,
-          })}
-        </p>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 8,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ fontSize: 18, margin: "0 0 4px 0" }}>
+            {data.tournament.name}{" "}
+            <span style={statusBadge(status)}>
+              {t(`tournament.status.${status}`)}
+            </span>
+          </h2>
+          <p style={{ fontSize: 13, opacity: 0.8, margin: 0 }}>
+            {t("tournament.counts", {
+              playing: data.counts.playing,
+              bbq: data.counts.bbq,
+            })}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            haptic.selection();
+            void silentReload();
+          }}
+          aria-label={t("common.refresh")}
+          title={t("common.refresh")}
+          style={{
+            border: "1px solid var(--tg-theme-section-separator-color, #ccc)",
+            background: "transparent",
+            color: "inherit",
+            borderRadius: 999,
+            width: 32,
+            height: 32,
+            cursor: "pointer",
+            fontSize: 16,
+            lineHeight: 1,
+            padding: 0,
+            flex: "0 0 auto",
+          }}
+        >
+          ↻
+        </button>
       </header>
 
       {!isLive && (
@@ -323,7 +394,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           type="button"
           onClick={() => void startTournament()}
           disabled={busy}
-          style={btnPrimary}
+          style={{ ...btnPrimary, display: inTelegram ? "none" : undefined }}
         >
           {t("tournament.start")}
         </button>
