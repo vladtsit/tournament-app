@@ -11,6 +11,7 @@ import {
   ScoringError,
   type SetScore,
 } from "../shared/scoring.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 
 // PATCH /api/matches/{matchId}
 // Admin-only. Edit sets and/or status of a match.
@@ -136,6 +137,7 @@ app.http("matchAdminEdit", {
     }
 
     await containers_.matches().items.upsert(updated);
+    await refreshPinnedMessage(ctx.groupId);
     return { status: 200, jsonBody: { match: updated } };
   },
 });

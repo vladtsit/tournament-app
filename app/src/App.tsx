@@ -14,13 +14,7 @@ import { TournamentScreen } from "./features/tournament/TournamentScreen";
 import { HistoryScreen } from "./features/history/HistoryScreen";
 import { OverallScreen } from "./features/history/OverallScreen";
 import { HelpScreen } from "./features/help/HelpScreen";
-import {
-  Avatar,
-  IconButton,
-  LanguagePicker,
-  Spinner,
-  Stack,
-} from "./ui";
+import { Avatar, IconButton, LanguagePicker, Spinner, Stack } from "./ui";
 import styles from "./App.module.css";
 
 export function App(): JSX.Element {
@@ -197,10 +191,7 @@ function TabbedView({
             role="tab"
             aria-selected={tab === id}
             onClick={() => selectTab(id)}
-            className={[
-              styles["tab"],
-              tab === id ? styles["tabActive"] : null,
-            ]
+            className={[styles["tab"], tab === id ? styles["tabActive"] : null]
               .filter(Boolean)
               .join(" ")}
           >

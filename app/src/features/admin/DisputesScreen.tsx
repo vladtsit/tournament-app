@@ -211,9 +211,7 @@ export function DisputesScreen({ tournamentId, onClose }: Props): JSX.Element {
         ) : (
           <Stack gap="sm">
             {matches.map((m) => {
-              const scoreStr = m.sets
-                .map((s) => `${s.a}-${s.b}`)
-                .join("  ·  ");
+              const scoreStr = m.sets.map((s) => `${s.a}-${s.b}`).join("  ·  ");
               return (
                 <Card key={m.id} variant="flat">
                   <Stack gap="sm">

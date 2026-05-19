@@ -24,7 +24,12 @@ export function tintFor(id: string | number): Tint {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   const slot = palette[h % palette.length];
-  if (!slot) return { bg: "var(--surface-2)", fg: "var(--text)", border: "var(--border)" };
+  if (!slot)
+    return {
+      bg: "var(--surface-2)",
+      fg: "var(--text)",
+      border: "var(--border)",
+    };
   return {
     bg: `hsl(${slot.hue} ${slot.sat}% 92%)`,
     fg: `hsl(${slot.hue} ${slot.sat}% 28%)`,

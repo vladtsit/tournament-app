@@ -2,14 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Shield, Users } from "lucide-react";
 import type { AuthGroup } from "../../hooks/useTelegramAuth";
-import {
-  Badge,
-  Card,
-  Inline,
-  ListRow,
-  SectionTitle,
-  Stack,
-} from "../../ui";
+import { Badge, Card, Inline, ListRow, SectionTitle, Stack } from "../../ui";
 
 interface Props {
   groups: AuthGroup[];

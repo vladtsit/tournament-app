@@ -75,10 +75,7 @@ export function OverallScreen(): JSX.Element {
   if (rows.length === 0) {
     return (
       <Card>
-        <EmptyState
-          icon={<BarChart3 size={32} />}
-          title={t("overall.empty")}
-        />
+        <EmptyState icon={<BarChart3 size={32} />} title={t("overall.empty")} />
       </Card>
     );
   }
@@ -162,7 +159,8 @@ function OverallRowView({ row }: { row: OverallRow }): JSX.Element {
       secondary={
         <Inline gap="xs" wrap align="center">
           <span>
-            {t("overall.col.tournaments")}: <strong>{row.tournamentsPlayed}</strong>
+            {t("overall.col.tournaments")}:{" "}
+            <strong>{row.tournamentsPlayed}</strong>
           </span>
           <span>·</span>
           <span>

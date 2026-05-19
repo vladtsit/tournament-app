@@ -12,12 +12,11 @@ import {
   isAdminStatus,
   getChatMember,
   sendMessage,
-  pinChatMessage,
   TelegramApiError,
   type ChatMember,
 } from "../shared/telegramApi.js";
 import { upsertMembership, type GroupUserDoc } from "../shared/membership.js";
-import { renderPinnedMessage } from "../shared/pinnedMessage.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 import { resolveLanguage, t, type SupportedLanguage } from "../shared/i18n.js";
 
 // POST /api/telegram/webhook
@@ -265,36 +264,19 @@ async function handleSetup(
     };
   }
 
-  // 4) Send + pin the launch message.
-  const pinned = renderPinnedMessage({
-    language: doc.settings.language,
-    groupShortId: doc.groupShortId,
-    groupTitle: doc.title,
-  });
-  let sent;
-  try {
-    sent = await sendMessage({
-      chat_id: chat.id,
-      text: pinned.text,
-      parse_mode: pinned.parse_mode,
-    });
-  } catch (err) {
-    ctx.error("sendMessage failed", err);
+  // 4) Persist the group doc, then render+send/pin (or edit) the launch
+  //    message via the unified refresh helper. force=true bypasses the
+  //    pin-debounce so /setup always pushes a fresh message.
+  await groups.items.upsert(doc);
+  const outcome = await refreshPinnedMessage(
+    groupId,
+    { force: true, pin: true },
+    ctx,
+  );
+  if (outcome === "error") {
     await safeSend(chat.id, t(lang, "setup.error"));
     return;
   }
-  try {
-    await pinChatMessage({
-      chat_id: chat.id,
-      message_id: sent.message_id,
-      disable_notification: true,
-    });
-  } catch (err) {
-    ctx.warn("pinChatMessage failed", err);
-  }
-  doc.pinnedMessageId = sent.message_id;
-  doc.lastPinUpdateAt = now;
-  await groups.items.upsert(doc);
 
   // 5) Record the admin as a member.
   const memberDoc: GroupUserDoc = {

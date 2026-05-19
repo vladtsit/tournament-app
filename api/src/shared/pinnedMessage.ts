@@ -1,73 +1,201 @@
 import { env } from "./env.js";
 import type { SupportedLanguage } from "./i18n.js";
 
-// Renders the pinned group launch message. Phase 1 (registration phase).
-// Per spec §15. Live-phase variant added in Phase 3.
+// Renders the pinned group launch/status message. Per spec §15.
+//
+// Three states:
+//   - "registration"  → tournament accepting players
+//   - "live"          → tournament under way
+//   - "ended"         → most recent tournament finished
+//   - "idle"          → no recent tournament (only shown right after /setup)
+//
+// Output is HTML (simpler to escape than MarkdownV2) plus an inline keyboard
+// with a single URL button pointing to the Mini App launch link. Web App
+// buttons are private-chat-only, so a t.me URL button is the correct choice
+// in a group pin.
+
+export interface PinPlayerName {
+  firstName: string;
+  lastName?: string;
+}
+
+export interface PinTopTeam {
+  players: PinPlayerName[];
+  wins: number;
+}
+
+export type PinState =
+  | { kind: "idle" }
+  | {
+      kind: "registration";
+      registeredCount: number;
+      bbqCount: number;
+      teamsFormed: number;
+      teamsExpected: number;
+    }
+  | {
+      kind: "live";
+      matchesPlayed: number;
+      matchesTotal: number;
+      leader: PinTopTeam | null;
+    }
+  | {
+      kind: "ended";
+      podium: PinTopTeam[]; // up to 3 entries, ordered 1st → 3rd
+    };
 
 export interface PinnedMessageContext {
   language: SupportedLanguage;
   groupShortId: string;
   groupTitle: string;
-  registeredCount?: number;
-  bbqCount?: number;
+  state: PinState;
 }
 
-function launchUrl(groupShortId: string): string {
-  // Telegram requires the t.me/<bot>/<short_name>?startapp=<param> format.
-  return `https://t.me/${env.telegramBotUsername}/${env.miniAppShortName}?startapp=g_${groupShortId}`;
-}
-
-const TEMPLATES: Record<
-  SupportedLanguage,
-  (c: PinnedMessageContext) => string
-> = {
-  en: (c) =>
-    [
-      `🎾 *Sunday Pádel — ${escapeMd(c.groupTitle)}*`,
-      ``,
-      `Registration is open\\.`,
-      c.registeredCount !== undefined
-        ? `Registered players: *${c.registeredCount}*${c.bbqCount !== undefined ? `  \\|  BBQ: *${c.bbqCount}*` : ""}`
-        : `Tap the link below to register, find a teammate, and submit match results\\.`,
-      ``,
-      `[Open the app](${launchUrl(c.groupShortId)})`,
-    ].join("\n"),
-  es: (c) =>
-    [
-      `🎾 *Pádel del domingo — ${escapeMd(c.groupTitle)}*`,
-      ``,
-      `Las inscripciones están abiertas\\.`,
-      c.registeredCount !== undefined
-        ? `Jugadores inscritos: *${c.registeredCount}*${c.bbqCount !== undefined ? `  \\|  BBQ: *${c.bbqCount}*` : ""}`
-        : `Toca el enlace para inscribirte, buscar compañero/a y registrar resultados\\.`,
-      ``,
-      `[Abrir la app](${launchUrl(c.groupShortId)})`,
-    ].join("\n"),
-  ru: (c) =>
-    [
-      `🎾 *Воскресный падел — ${escapeMd(c.groupTitle)}*`,
-      ``,
-      `Регистрация открыта\\.`,
-      c.registeredCount !== undefined
-        ? `Зарегистрировано игроков: *${c.registeredCount}*${c.bbqCount !== undefined ? `  \\|  BBQ: *${c.bbqCount}*` : ""}`
-        : `Нажмите на ссылку, чтобы зарегистрироваться, найти напарника и вносить результаты\\.`,
-      ``,
-      `[Открыть приложение](${launchUrl(c.groupShortId)})`,
-    ].join("\n"),
-};
-
-export function renderPinnedMessage(ctx: PinnedMessageContext): {
+export interface PinnedRendered {
   text: string;
-  parse_mode: "MarkdownV2";
-} {
-  return {
-    text: TEMPLATES[ctx.language](ctx),
-    parse_mode: "MarkdownV2",
+  parse_mode: "HTML";
+  reply_markup: {
+    inline_keyboard: Array<Array<{ text: string; url: string }>>;
   };
 }
 
-// MarkdownV2 requires escaping these characters.
-// https://core.telegram.org/bots/api#markdownv2-style
-function escapeMd(s: string): string {
-  return s.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, (m) => `\\${m}`);
+function launchUrl(groupShortId: string): string {
+  return `https://t.me/${env.telegramBotUsername}/${env.miniAppShortName}?startapp=g_${groupShortId}`;
+}
+
+const STRINGS: Record<
+  SupportedLanguage,
+  {
+    openButton: string;
+    statusIdle: string;
+    statusIdleHint: string;
+    statusRegistration: string;
+    statusLive: string;
+    statusEnded: string;
+    registeredLabel: string;
+    bbqLabel: string;
+    pairsLabel: (formed: number, expected: number) => string;
+    matchesLabel: (played: number, total: number) => string;
+    leaderLabel: (team: string, wins: number) => string;
+    noLeader: string;
+  }
+> = {
+  en: {
+    openButton: "🎾 Open the app",
+    statusIdle: "🟢 Ready for next tournament",
+    statusIdleHint: "Tap below to register when one opens.",
+    statusRegistration: "🟢 Registration is open",
+    statusLive: "🔴 Tournament in progress",
+    statusEnded: "🏁 Tournament ended",
+    registeredLabel: "Registered",
+    bbqLabel: "BBQ",
+    pairsLabel: (f, e) => `Pairs formed: <b>${f}</b> of <b>${e}</b>`,
+    matchesLabel: (p, t) => `Matches played: <b>${p}</b> of <b>${t}</b>`,
+    leaderLabel: (team, wins) =>
+      `🏅 Leader: <b>${team}</b> · ${wins} ${wins === 1 ? "win" : "wins"}`,
+    noLeader: "🏅 No matches played yet",
+  },
+  es: {
+    openButton: "🎾 Abrir la app",
+    statusIdle: "🟢 Listos para el próximo torneo",
+    statusIdleHint: "Toca abajo para inscribirte cuando se abra uno.",
+    statusRegistration: "🟢 Inscripciones abiertas",
+    statusLive: "🔴 Torneo en curso",
+    statusEnded: "🏁 Torneo finalizado",
+    registeredLabel: "Inscritos",
+    bbqLabel: "BBQ",
+    pairsLabel: (f, e) => `Parejas formadas: <b>${f}</b> de <b>${e}</b>`,
+    matchesLabel: (p, t) => `Partidos jugados: <b>${p}</b> de <b>${t}</b>`,
+    leaderLabel: (team, wins) =>
+      `🏅 Líder: <b>${team}</b> · ${wins} ${wins === 1 ? "victoria" : "victorias"}`,
+    noLeader: "🏅 Aún sin partidos jugados",
+  },
+  ru: {
+    openButton: "🎾 Открыть приложение",
+    statusIdle: "🟢 Готовы к следующему турниру",
+    statusIdleHint:
+      "Нажмите кнопку ниже, чтобы записаться, когда он откроется.",
+    statusRegistration: "🟢 Регистрация открыта",
+    statusLive: "🔴 Турнир идёт",
+    statusEnded: "🏁 Турнир завершён",
+    registeredLabel: "Зарегистрировано",
+    bbqLabel: "BBQ",
+    pairsLabel: (f, e) => `Пар собрано: <b>${f}</b> из <b>${e}</b>`,
+    matchesLabel: (p, t) => `Сыграно матчей: <b>${p}</b> из <b>${t}</b>`,
+    leaderLabel: (team, wins) =>
+      `🏅 Лидер: <b>${team}</b> · ${wins} ${pluralRu(wins, ["победа", "победы", "побед"])}`,
+    noLeader: "🏅 Ещё нет сыгранных матчей",
+  },
+};
+
+function pluralRu(n: number, forms: [string, string, string]): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return forms[1];
+  return forms[2];
+}
+
+function fullName(p: PinPlayerName): string {
+  return p.lastName ? `${p.firstName} ${p.lastName}` : p.firstName;
+}
+
+function teamLabel(t: PinTopTeam): string {
+  return t.players.map(fullName).join(" + ");
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+export function renderPinnedMessage(ctx: PinnedMessageContext): PinnedRendered {
+  const s = STRINGS[ctx.language];
+  const titleLine = `🎾 <b>${escapeHtml(ctx.groupTitle)}</b>`;
+  const lines: string[] = [titleLine];
+
+  switch (ctx.state.kind) {
+    case "idle":
+      lines.push(s.statusIdle, "", s.statusIdleHint);
+      break;
+    case "registration": {
+      const st = ctx.state;
+      lines.push(
+        s.statusRegistration,
+        "",
+        `👥 ${s.registeredLabel}: <b>${st.registeredCount}</b>   🍖 ${s.bbqLabel}: <b>${st.bbqCount}</b>`,
+        `🤝 ${s.pairsLabel(st.teamsFormed, st.teamsExpected)}`,
+      );
+      break;
+    }
+    case "live": {
+      const st = ctx.state;
+      lines.push(
+        s.statusLive,
+        "",
+        `🏟 ${s.matchesLabel(st.matchesPlayed, st.matchesTotal)}`,
+        st.leader
+          ? s.leaderLabel(escapeHtml(teamLabel(st.leader)), st.leader.wins)
+          : s.noLeader,
+      );
+      break;
+    }
+    case "ended": {
+      const medals = ["🥇", "🥈", "🥉"];
+      lines.push(s.statusEnded, "");
+      ctx.state.podium.slice(0, 3).forEach((t, i) => {
+        lines.push(`${medals[i] ?? "•"} <b>${escapeHtml(teamLabel(t))}</b>`);
+      });
+      break;
+    }
+  }
+
+  return {
+    text: lines.join("\n"),
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: s.openButton, url: launchUrl(ctx.groupShortId) }],
+      ],
+    },
+  };
 }

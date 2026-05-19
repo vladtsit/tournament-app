@@ -61,10 +61,7 @@ export function LanguagePicker<T extends string>({
                 type="button"
                 role="menuitemradio"
                 aria-checked={isActive}
-                className={[
-                  styles["item"],
-                  isActive ? styles["active"] : null,
-                ]
+                className={[styles["item"], isActive ? styles["active"] : null]
                   .filter(Boolean)
                   .join(" ")}
                 onClick={() => {

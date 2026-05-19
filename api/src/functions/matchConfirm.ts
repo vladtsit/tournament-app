@@ -2,6 +2,7 @@ import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { containers_ } from "../shared/cosmos.js";
 import { requireGroup, mapGroupContextError } from "../shared/requireGroup.js";
 import type { MatchDoc } from "../shared/matches.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 
 // POST /api/matches/{matchId}/confirm?tournamentId=...
 // Caller must be on the *opposing* team (not the submitter team).
@@ -75,6 +76,7 @@ app.http("matchConfirm", {
       confirmedByUserId: ctx.userId,
     };
     await containers_.matches().items.upsert(updated);
+    await refreshPinnedMessage(ctx.groupId);
 
     return { status: 200, jsonBody: { match: updated } };
   },

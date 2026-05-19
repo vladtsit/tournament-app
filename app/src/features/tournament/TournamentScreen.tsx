@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
@@ -81,11 +88,7 @@ function fullName(p: { firstName: string; lastName?: string }): string {
   return p.lastName ? `${p.firstName} ${p.lastName}` : p.firstName;
 }
 
-type StatusBadgeVariant =
-  | "success"
-  | "info"
-  | "neutral"
-  | "warning";
+type StatusBadgeVariant = "success" | "info" | "neutral" | "warning";
 
 function statusVariant(s: TournamentDoc["status"]): StatusBadgeVariant {
   switch (s) {
@@ -514,10 +517,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
       ) : null}
       {isLive && !data.team ? (
         <Card>
-          <EmptyState
-            icon={<Trophy size={28} />}
-            title={t("live.notInTeam")}
-          />
+          <EmptyState icon={<Trophy size={28} />} title={t("live.notInTeam")} />
         </Card>
       ) : null}
 
@@ -556,8 +556,7 @@ function MetricChip({
   tone?: "accent" | "warning";
 }): JSX.Element {
   const color = tone === "warning" ? "var(--warning)" : "var(--accent)";
-  const bg =
-    tone === "warning" ? "var(--warning-soft)" : "var(--accent-soft)";
+  const bg = tone === "warning" ? "var(--warning-soft)" : "var(--accent-soft)";
   return (
     <Inline gap="sm" align="center">
       <span
@@ -798,9 +797,7 @@ function TeamSection({
                 selected={selected}
                 disabled={busy}
                 onClick={onRowClick}
-                leading={
-                  <Avatar id={p.userId} name={fullName(p)} size={36} />
-                }
+                leading={<Avatar id={p.userId} name={fullName(p)} size={36} />}
                 primary={fullName(p)}
                 secondary={
                   recent ? (
@@ -1171,8 +1168,7 @@ function LiveSection({
               <MetricStat
                 label={t("live.col.team")}
                 value={
-                  (board?.ranked.length ?? 0) +
-                  (board?.needsMore.length ?? 0)
+                  (board?.ranked.length ?? 0) + (board?.needsMore.length ?? 0)
                 }
               />
               <MetricStat
@@ -1272,9 +1268,7 @@ function LiveSection({
                       checked={opponentId === o.teamId}
                       onClick={() => {
                         haptic.selection();
-                        setOpponentId(
-                          opponentId === o.teamId ? "" : o.teamId,
-                        );
+                        setOpponentId(opponentId === o.teamId ? "" : o.teamId);
                       }}
                     >
                       {teamLabel(o)}
@@ -1329,10 +1323,7 @@ function LiveSection({
         <Card>
           <SectionTitle>{t("live.recent")}</SectionTitle>
           {matches.length === 0 ? (
-            <EmptyState
-              icon={<Flag size={28} />}
-              title={t("live.noMatches")}
-            />
+            <EmptyState icon={<Flag size={28} />} title={t("live.noMatches")} />
           ) : (
             <Stack gap="xs">
               {matches.slice(0, 20).map((m) => {
@@ -1514,10 +1505,16 @@ function LiveSection({
         ) : null}
 
         {error ? (
-          <Card variant="flat" padding="sm" style={{ borderColor: "var(--danger)" }}>
+          <Card
+            variant="flat"
+            padding="sm"
+            style={{ borderColor: "var(--danger)" }}
+          >
             <Inline gap="sm" align="center">
               <AlertTriangle color="var(--danger)" size={18} />
-              <span style={{ color: "var(--danger)", fontSize: "var(--font-sm)" }}>
+              <span
+                style={{ color: "var(--danger)", fontSize: "var(--font-sm)" }}
+              >
                 {t(`errors.${error}`, { defaultValue: t("app.errorGeneric") })}
               </span>
             </Inline>

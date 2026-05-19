@@ -12,6 +12,7 @@ import {
   type MatchAggregate,
 } from "../shared/scoring.js";
 import { applyPlayerDeltas } from "../shared/playerStats.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 
 // POST /api/tournaments/{tournamentId}/end
 // Admin-only. Transitions live → ended, snapshots finalStandings, updates
@@ -146,6 +147,7 @@ app.http("tournamentEnd", {
       finalStandings: standings,
     };
     await containers_.tournaments().items.upsert(updated);
+    await refreshPinnedMessage(ctx.groupId, { force: true });
 
     return { status: 200, jsonBody: { tournament: updated } };
   },

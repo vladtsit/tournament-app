@@ -16,7 +16,10 @@ const styles: CSSProperties = {
 
 // Inject keyframes once. Module-side effect is fine — same as Telegram's WebApp
 // script init.
-if (typeof document !== "undefined" && !document.getElementById("ui-spinner-kf")) {
+if (
+  typeof document !== "undefined" &&
+  !document.getElementById("ui-spinner-kf")
+) {
   const el = document.createElement("style");
   el.id = "ui-spinner-kf";
   el.textContent = "@keyframes uiSpin { to { transform: rotate(360deg); } }";

@@ -52,11 +52,11 @@ export function EmptyState({ icon, title, body, action }: EmptyStateProps) {
         {title}
       </div>
       {body ? (
-        <div style={{ fontSize: "var(--font-sm)", maxWidth: 320 }}>
-          {body}
-        </div>
+        <div style={{ fontSize: "var(--font-sm)", maxWidth: 320 }}>{body}</div>
       ) : null}
-      {action ? <div style={{ marginTop: "var(--space-2)" }}>{action}</div> : null}
+      {action ? (
+        <div style={{ marginTop: "var(--space-2)" }}>{action}</div>
+      ) : null}
     </div>
   );
 }

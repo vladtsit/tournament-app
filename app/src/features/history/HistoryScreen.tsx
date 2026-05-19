@@ -82,10 +82,7 @@ export function HistoryScreen(): JSX.Element {
   if (items.length === 0) {
     return (
       <Card>
-        <EmptyState
-          icon={<History size={32} />}
-          title={t("history.empty")}
-        />
+        <EmptyState icon={<History size={32} />} title={t("history.empty")} />
       </Card>
     );
   }

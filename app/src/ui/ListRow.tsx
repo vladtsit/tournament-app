@@ -31,71 +31,70 @@ export type ListRowProps =
  * optional trailing slot. When `interactive` is true it renders as a button;
  * otherwise as a div.
  */
-export const ListRow = forwardRef<HTMLElement, ListRowProps>(function ListRow(
-  props,
-  ref,
-) {
-  const {
-    leading,
-    primary,
-    secondary,
-    trailing,
-    selected,
-    bordered = false,
-    interactive,
-    className,
-    ...rest
-  } = props as BaseProps & {
-    interactive?: boolean;
-    className?: string;
-  } & Record<string, unknown>;
+export const ListRow = forwardRef<HTMLElement, ListRowProps>(
+  function ListRow(props, ref) {
+    const {
+      leading,
+      primary,
+      secondary,
+      trailing,
+      selected,
+      bordered = false,
+      interactive,
+      className,
+      ...rest
+    } = props as BaseProps & {
+      interactive?: boolean;
+      className?: string;
+    } & Record<string, unknown>;
 
-  const classes = [
-    styles["row"],
-    bordered ? styles["bordered"] : null,
-    interactive ? styles["interactive"] : null,
-    selected ? styles["selected"] : null,
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+    const classes = [
+      styles["row"],
+      bordered ? styles["bordered"] : null,
+      interactive ? styles["interactive"] : null,
+      selected ? styles["selected"] : null,
+      className,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-  const content = (
-    <>
-      {leading ? <span className={styles["leading"]}>{leading}</span> : null}
-      <span className={styles["body"]}>
-        {primary !== undefined && primary !== null ? (
-          <span className={styles["primary"]}>{primary}</span>
+    const content = (
+      <>
+        {leading ? <span className={styles["leading"]}>{leading}</span> : null}
+        <span className={styles["body"]}>
+          {primary !== undefined && primary !== null ? (
+            <span className={styles["primary"]}>{primary}</span>
+          ) : null}
+          {secondary !== undefined && secondary !== null ? (
+            <span className={styles["secondary"]}>{secondary}</span>
+          ) : null}
+        </span>
+        {trailing ? (
+          <span className={styles["trailing"]}>{trailing}</span>
         ) : null}
-        {secondary !== undefined && secondary !== null ? (
-          <span className={styles["secondary"]}>{secondary}</span>
-        ) : null}
-      </span>
-      {trailing ? (
-        <span className={styles["trailing"]}>{trailing}</span>
-      ) : null}
-    </>
-  );
+      </>
+    );
 
-  if (interactive) {
+    if (interactive) {
+      return (
+        <button
+          ref={ref as Ref<HTMLButtonElement>}
+          type="button"
+          className={classes}
+          {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+        >
+          {content}
+        </button>
+      );
+    }
     return (
-      <button
-        ref={ref as Ref<HTMLButtonElement>}
-        type="button"
+      <div
+        ref={ref as Ref<HTMLDivElement>}
         className={classes}
-        {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+        {...(rest as HTMLAttributes<HTMLDivElement>)}
       >
         {content}
-      </button>
+      </div>
     );
-  }
-  return (
-    <div
-      ref={ref as Ref<HTMLDivElement>}
-      className={classes}
-      {...(rest as HTMLAttributes<HTMLDivElement>)}
-    >
-      {content}
-    </div>
-  );
-});
+  },
+);

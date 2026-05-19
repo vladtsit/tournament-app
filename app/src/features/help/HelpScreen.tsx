@@ -138,11 +138,7 @@ export function HelpScreen({ open, onClose }: Props): JSX.Element {
                   {t(`help.sections.${key}.title`)}
                 </span>
                 <span aria-hidden="true" style={{ color: "var(--text-muted)" }}>
-                  {isOpen ? (
-                    <ChevronUp size={18} />
-                  ) : (
-                    <ChevronDown size={18} />
-                  )}
+                  {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 </span>
               </button>
               {isOpen ? (

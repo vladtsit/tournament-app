@@ -5,6 +5,7 @@ import {
   requireGroupAdmin,
   mapGroupContextError,
 } from "../shared/requireGroup.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 
 // POST /api/tournaments
 // Body: { name?: string, tiebreakRule?: 'regular_set'|'super_tiebreak_to_10' }
@@ -85,6 +86,7 @@ app.http("tournamentCreate", {
     };
 
     await containers_.tournaments().items.create(doc);
+    await refreshPinnedMessage(ctx.groupId, { force: true });
 
     return {
       status: 201,

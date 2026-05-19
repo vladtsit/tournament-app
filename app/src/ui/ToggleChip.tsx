@@ -2,8 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Check } from "lucide-react";
 import styles from "./ToggleChip.module.css";
 
-export interface ToggleChipProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ToggleChipProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   checked: boolean;
   icon?: ReactNode;
   /** Visual tone when checked. Defaults to accent. */
@@ -25,11 +24,7 @@ export function ToggleChip({
       : tone === "warning"
         ? styles["checkedWarning"]
         : styles["checked"];
-  const classes = [
-    styles["chip"],
-    checked ? checkedClass : null,
-    className,
-  ]
+  const classes = [styles["chip"], checked ? checkedClass : null, className]
     .filter(Boolean)
     .join(" ");
   return (

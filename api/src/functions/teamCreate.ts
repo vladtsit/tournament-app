@@ -1,6 +1,7 @@
 import { app, type HttpRequest, type HttpResponseInit } from "@azure/functions";
 import { randomUUID } from "node:crypto";
 import { containers_ } from "../shared/cosmos.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 import { requireGroup, mapGroupContextError } from "../shared/requireGroup.js";
 import {
   withIdempotency,
@@ -116,6 +117,9 @@ app.http("teamCreate", {
         { partnerUserId, tournamentId },
         async () => formTeam(ctx.groupId, t, ctx.userId, partnerUserId),
       );
+      if (!result.replayed && result.status < 300) {
+        await refreshPinnedMessage(ctx.groupId);
+      }
       const resp: HttpResponseInit = {
         status: result.status,
         jsonBody: result.response,

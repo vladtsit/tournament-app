@@ -7,6 +7,7 @@ import {
   IdempotencyInvalidKey,
 } from "../shared/idempotency.js";
 import { disbandTeamForUser } from "../shared/teams.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 
 // POST /api/tournaments/{tournamentId}/registrations
 // Body: { playing: boolean, bbq: boolean }
@@ -145,6 +146,9 @@ app.http("registrationUpsert", {
           };
         },
       );
+      if (!result.replayed && result.status < 300) {
+        await refreshPinnedMessage(ctx.groupId);
+      }
       const resp: HttpResponseInit = {
         status: result.status,
         jsonBody: result.response,

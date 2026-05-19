@@ -4,6 +4,7 @@ import {
   requireGroupAdmin,
   mapGroupContextError,
 } from "../shared/requireGroup.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 
 // POST /api/tournaments/{tournamentId}/start
 // Admin-only. Transitions registration_open → live.
@@ -57,6 +58,7 @@ app.http("tournamentStart", {
       updatedAt: new Date().toISOString(),
     };
     await containers_.tournaments().items.upsert(updated);
+    await refreshPinnedMessage(ctx.groupId, { force: true });
 
     return { status: 200, jsonBody: { tournament: updated } };
   },

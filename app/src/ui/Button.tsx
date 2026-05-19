@@ -60,10 +60,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...rest}
       >
         <span
-          className={[
-            styles["label"],
-            loading ? styles["loadingHidden"] : null,
-          ]
+          className={[styles["label"], loading ? styles["loadingHidden"] : null]
             .filter(Boolean)
             .join(" ")}
           style={{ gap: "var(--space-2)" }}

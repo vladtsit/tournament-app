@@ -1,8 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import styles from "./IconButton.module.css";
 
-export interface IconButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Required for accessibility — icon-only buttons need a label. */
   "aria-label": string;
   icon: ReactNode;

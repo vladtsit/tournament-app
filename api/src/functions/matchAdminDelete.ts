@@ -4,6 +4,7 @@ import {
   requireGroupAdmin,
   mapGroupContextError,
 } from "../shared/requireGroup.js";
+import { refreshPinnedMessage } from "../shared/refreshPin.js";
 
 // DELETE /api/matches/{matchId}
 // Admin-only. Hard-deletes the match document. The leaderboard re-queries
@@ -36,6 +37,7 @@ app.http("matchAdminDelete", {
       }
       throw err;
     }
+    await refreshPinnedMessage(ctx.groupId);
     return { status: 204 };
   },
 });
