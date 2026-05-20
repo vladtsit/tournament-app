@@ -10,8 +10,11 @@ interface TournamentDoc {
   id: string;
   groupId: string;
   name: string;
-  status: "draft" | "registration_open" | "live" | "ended";
-  settings: { tiebreakRule: string };
+  status: "draft" | "registration_open" | "review" | "live" | "ended";
+  settings: {
+    tiebreakRule?: string;
+    firstRoundCourts?: Array<{ courtId: string; teamIds: string[] }>;
+  };
   createdAt: string;
 }
 
@@ -23,6 +26,8 @@ interface RegistrationDoc {
   firstName: string;
   playing: boolean;
   bbq: boolean;
+  resigned?: boolean;
+  resignedAt?: string;
   updatedAt: string;
 }
 
@@ -38,8 +43,9 @@ interface TeamDoc {
   id: string;
   groupId: string;
   tournamentId: string;
-  players: Array<{ userId: string; firstName: string }>;
+  players: Array<{ userId: string; firstName: string; lastName?: string }>;
   status: "active" | "disbanded";
+  confirmedByAdmin?: boolean;
 }
 
 app.http("tournamentCurrent", {
@@ -59,7 +65,7 @@ app.http("tournamentCurrent", {
       .items.query<TournamentDoc>(
         {
           query:
-            "SELECT TOP 1 * FROM c WHERE c.groupId = @g AND c.status IN ('draft','registration_open','live') ORDER BY c.createdAt DESC",
+            "SELECT TOP 1 * FROM c WHERE c.groupId = @g AND c.status IN ('draft','registration_open','review','live') ORDER BY c.createdAt DESC",
           parameters: [{ name: "@g", value: ctx.groupId }],
         },
         { partitionKey: ctx.groupId },
@@ -97,6 +103,62 @@ app.http("tournamentCurrent", {
       team = r?.resource ?? null;
     }
 
+    // Admins get the full registration list, all teams, and court config so
+    // the SPA can render the AdminTournamentScreen without extra calls.
+    const membership = await containers_
+      .groupUsers()
+      .item(`${ctx.groupId}_${ctx.userId}`, ctx.groupId)
+      .read<{ isAdmin?: boolean }>()
+      .catch(() => null);
+    const isAdmin = membership?.resource?.isAdmin === true;
+    let extras: {
+      registrations?: RegistrationDoc[];
+      teams?: TeamDoc[];
+      group?: { courts?: unknown };
+    } = {};
+    if (isAdmin) {
+      const [regsQ, teamsQ, groupRead] = await Promise.all([
+        containers_
+          .registrations()
+          .items.query<RegistrationDoc>(
+            {
+              query:
+                "SELECT * FROM c WHERE c.groupId = @g AND c.tournamentId = @t",
+              parameters: [
+                { name: "@g", value: t.groupId },
+                { name: "@t", value: t.id },
+              ],
+            },
+            { partitionKey: t.groupId },
+          )
+          .fetchAll(),
+        containers_
+          .teams()
+          .items.query<TeamDoc>(
+            {
+              query:
+                "SELECT * FROM c WHERE c.groupId = @g AND c.tournamentId = @t AND (NOT IS_DEFINED(c.status) OR c.status = 'active')",
+              parameters: [
+                { name: "@g", value: t.groupId },
+                { name: "@t", value: t.id },
+              ],
+            },
+            { partitionKey: t.groupId },
+          )
+          .fetchAll(),
+        containers_
+          .groups()
+          .item(t.groupId, t.groupId)
+          .read<{ settings?: { courts?: unknown } }>()
+          .catch(() => null),
+      ]);
+      extras = {
+        registrations: regsQ.resources,
+        teams: teamsQ.resources,
+        group: { courts: groupRead?.resource?.settings?.courts },
+      };
+    }
+
     return {
       status: 200,
       jsonBody: {
@@ -104,6 +166,7 @@ app.http("tournamentCurrent", {
         registration: regRead?.resource ?? null,
         team,
         counts,
+        ...extras,
       },
     };
   },

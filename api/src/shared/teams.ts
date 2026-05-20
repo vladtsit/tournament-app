@@ -6,6 +6,12 @@ interface TeamDoc {
   tournamentId: string;
   players: Array<{ userId: string; firstName: string; lastName?: string }>;
   status: "active" | "disbanded";
+  confirmedByAdmin?: boolean;
+  confirmedByAdminAt?: string;
+  confirmedByAdminUserId?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**

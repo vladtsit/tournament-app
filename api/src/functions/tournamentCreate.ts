@@ -22,7 +22,7 @@ interface TournamentDoc {
   id: string;
   groupId: string;
   name: string;
-  status: "draft" | "registration_open" | "live" | "ended";
+  status: "draft" | "registration_open" | "review" | "live" | "ended";
   settings: {
     tiebreakRule: "regular_set" | "super_tiebreak_to_10";
   };
@@ -56,7 +56,7 @@ app.http("tournamentCreate", {
       .items.query<{ id: string; status: string }>(
         {
           query:
-            "SELECT TOP 1 c.id, c.status FROM c WHERE c.groupId = @g AND c.status IN ('draft','registration_open','live') ORDER BY c.createdAt DESC",
+            "SELECT TOP 1 c.id, c.status FROM c WHERE c.groupId = @g AND c.status IN ('draft','registration_open','review','live') ORDER BY c.createdAt DESC",
           parameters: [{ name: "@g", value: ctx.groupId }],
         },
         { partitionKey: ctx.groupId },

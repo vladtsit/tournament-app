@@ -60,7 +60,16 @@
     "invalid_state": "No permitido en este estado del torneo.",
     "invalid_status": "Estado inválido.",
     "nothing_to_update": "Nada que actualizar.",
-    "invalid_sets": "Sets inválidos."
+    "invalid_sets": "Sets inválidos.",
+    "team_locked_by_admin": "Este equipo ha sido confirmado por un admin. Habla con el admin para cambiarlo.",
+    "registration_locked": "Renunciaste a este torneo. Pide al admin que te vuelva a habilitar.",
+    "not_all_confirmed": "Todos los equipos deben estar confirmados antes de empezar.",
+    "odd_player_count": "El número de jugadores inscritos es impar. Añade o quita a alguien antes de empezar.",
+    "courts_not_assigned": "Asigna pistas para la primera ronda antes de empezar.",
+    "not_in_group": "Esa persona ya no es miembro de este grupo.",
+    "team_assigned_twice": "Cada equipo sólo puede estar en una pista.",
+    "unknown_team": "Ese equipo no pertenece a este torneo.",
+    "unknown_court": "Esa pista no está configurada para este grupo."
   },
   "tournament": {
     "none": "No hay ningún torneo abierto ahora mismo.",
@@ -74,14 +83,21 @@
     "status": {
       "draft": "Borrador",
       "registration_open": "Abierto",
+      "review": "Preparativos",
       "live": "En juego",
       "ended": "Finalizado"
-    }
+    },
+    "stopRegistration": "Cerrar inscripción",
+    "reopenRegistration": "Reabrir inscripción",
+    "reviewBanner": "La inscripción está cerrada. El admin está finalizando equipos y pistas."
   },
   "registration": {
     "title": "Tu inscripción",
     "playing": "Juego",
-    "bbq": "BBQ"
+    "bbq": "BBQ",
+    "resign": "Renunciar",
+    "resignWarn": "Necesitarás que un admin te vuelva a habilitar. ¿Continuar?",
+    "resignedBanner": "Renunciaste a este torneo. Pide al admin que te vuelva a habilitar."
   },
   "teams": {
     "title": "Equipo",
@@ -145,7 +161,44 @@
     "openDisputes": "Ver disputas ({{n}})",
     "disputesTitle": "Partidos en disputa",
     "noDisputes": "No hay partidos en disputa.",
-    "submittedBy": "enviado por {{name}}"
+    "submittedBy": "enviado por {{name}}",
+    "players": {
+      "title": "Jugadores",
+      "add": "Añadir",
+      "remove": "Quitar",
+      "search": "Buscar miembros del grupo",
+      "removeConfirm": "¿Quitar a {{name}} del torneo?",
+      "alreadyRegistered": "Ya inscrito",
+      "resigned": "Renunció",
+      "unlock": "Desbloquear",
+      "empty": "Sin resultados."
+    },
+    "teams": {
+      "title": "Equipos",
+      "confirm": "Confirmar",
+      "unconfirm": "Desconfirmar",
+      "lockedBadge": "Bloqueado por admin",
+      "assign": "Formar pareja",
+      "disband": "Deshacer",
+      "unpaired": "Sin pareja",
+      "pickA": "Elige primer jugador",
+      "pickB": "Elige segundo jugador"
+    },
+    "courts": {
+      "title": "Pistas de la primera ronda",
+      "unassigned": "Equipos sin asignar",
+      "green": "Verde",
+      "blue": "Azul",
+      "assign": "Asignar",
+      "empty": "Sin equipos en esta pista."
+    },
+    "start": {
+      "blocked": {
+        "oddCount": "Número impar de jugadores ({{n}}) — añade o quita a alguien.",
+        "notConfirmed": "Quedan {{n}} equipo(s) por confirmar.",
+        "courtsMissing": "Aún no hay equipos asignados a pistas."
+      }
+    }
   },
   "help": {
     "title": "Ayuda",

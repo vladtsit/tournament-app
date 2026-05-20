@@ -50,6 +50,15 @@ Cost target: **$0/month** at low volume. Do not propose changes that violate thi
 - **Secrets**: never hardcode. Read from `process.env`. Production uses Key Vault references; locally uses `api/local.settings.json` (gitignored).
 - Never log `initData`, JWTs, bot tokens, or full Cosmos documents containing user data.
 
+## Tournament lifecycle (spec §13)
+
+- Status enum: `draft → registration_open → review → live → ended`.
+- `review` lives between `registration_open` and `live`. Admin enters via **Stop registration**; can return via **Reopen registration**.
+- Starting requires: every playing registration in a confirmed team, even player count, and at least one first-round court assignment (`tournaments.settings.firstRoundCourts`).
+- Per-team admin confirm: `teams.confirmedByAdmin` locks the team — only admin can swap/disband; players can still resign (which tears down the team).
+- Resign: setting `registrations.playing=false` while `playing=true` flips `resigned=true`. Re-registering requires admin **Unlock**.
+- Group config: `groups.settings.courts` is seeded by `/setup` to 5 fixed courts (id 1,2 green; 3,4,5 blue).
+
 ## Padel scoring (spec §17, casual mode v2.2)
 
 - Casual padel: one record = one game. Sets stored as `[{a:number, b:number}]` of length 1.

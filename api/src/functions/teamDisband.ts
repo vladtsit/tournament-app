@@ -138,6 +138,13 @@ async function disbandTeamHandler(
   if (!isMember) {
     return errResp(403, "not_a_team_member", "You are not on this team.");
   }
+  if (team.confirmedByAdmin) {
+    return errResp(
+      409,
+      "team_locked_by_admin",
+      "Team is locked by the admin. Contact the admin to be removed.",
+    );
+  }
 
   await disbandTeam(groupId, tournamentId, teamId);
 

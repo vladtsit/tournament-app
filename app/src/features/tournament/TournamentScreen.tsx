@@ -27,6 +27,7 @@ import { api, ApiClientError, downloadAuthed } from "../../apiClient";
 import { haptic, isInTelegram, storage } from "../../telegram";
 import { useMainButton } from "../../hooks/useMainButton";
 import { DisputesScreen } from "../admin/DisputesScreen";
+import { AdminTournamentScreen } from "../admin/AdminTournamentScreen";
 import {
   Avatar,
   Badge,
@@ -55,17 +56,23 @@ interface RegistrationDoc {
   lastName?: string;
   playing: boolean;
   bbq: boolean;
+  resigned?: boolean;
 }
 
 interface TeamDoc {
   id: string;
   players: PlayerSummary[];
+  confirmedByAdmin?: boolean;
 }
 
 interface TournamentDoc {
   id: string;
   name: string;
-  status: "draft" | "registration_open" | "live" | "ended";
+  status: "draft" | "registration_open" | "review" | "live" | "ended";
+  settings?: {
+    tiebreakRule?: string;
+    firstRoundCourts?: Array<{ courtId: string; teamIds: string[] }>;
+  };
 }
 
 interface CurrentResponse {
@@ -96,6 +103,8 @@ function statusVariant(s: TournamentDoc["status"]): StatusBadgeVariant {
       return "success";
     case "registration_open":
       return "info";
+    case "review":
+      return "warning";
     case "ended":
       return "neutral";
     default:
@@ -403,6 +412,19 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
   const bbq = reg?.bbq === true;
   const status = data.tournament.status;
   const isLive = status === "live";
+  const isReview = status === "review";
+
+  // Admin gets the dedicated AdminTournamentScreen during registration_open
+  // and review states.
+  if (isAdmin && (status === "registration_open" || isReview)) {
+    return (
+      <AdminTournamentScreen
+        groupId={groupId}
+        current={data as Parameters<typeof AdminTournamentScreen>[0]["current"]}
+        onReload={reload}
+      />
+    );
+  }
 
   return (
     <Stack gap="md">
@@ -456,16 +478,30 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
       </Card>
 
       {/* ─── 3b. Registration toggles ───────────────────────────────────── */}
-      {!isLive ? (
+      {!isLive && !isReview ? (
         <Card>
           <SectionTitle>{t("registration.title")}</SectionTitle>
+          {reg?.resigned ? (
+            <p style={{ margin: "0 0 8px", opacity: 0.8 }}>
+              {t("registration.resignedBanner")}
+            </p>
+          ) : null}
           <Inline gap="sm" wrap>
             <ToggleChip
               checked={playing}
               tone="success"
               icon={<Users size={16} />}
-              disabled={busy}
-              onClick={() => void upsertRegistration(!playing, bbq)}
+              disabled={busy || reg?.resigned === true}
+              onClick={() => {
+                if (
+                  playing &&
+                  typeof window !== "undefined" &&
+                  !window.confirm(t("registration.resignWarn"))
+                ) {
+                  return;
+                }
+                void upsertRegistration(!playing, bbq);
+              }}
             >
               {t("registration.playing")}
             </ToggleChip>
@@ -479,6 +515,12 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
               {t("registration.bbq")}
             </ToggleChip>
           </Inline>
+        </Card>
+      ) : null}
+
+      {isReview ? (
+        <Card>
+          <p style={{ margin: 0 }}>{t("tournament.reviewBanner")}</p>
         </Card>
       ) : null}
 
@@ -753,16 +795,23 @@ function TeamSection({
                 </span>
               </Inline>
             ))}
+            {team.confirmedByAdmin ? (
+              <Badge variant="success" size="sm">
+                {t("admin.teams.lockedBadge")}
+              </Badge>
+            ) : null}
           </Inline>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => void leaveTeam()}
-            disabled={busy}
-            loading={busy}
-          >
-            {t("teams.leave")}
-          </Button>
+          {!team.confirmedByAdmin ? (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => void leaveTeam()}
+              disabled={busy}
+              loading={busy}
+            >
+              {t("teams.leave")}
+            </Button>
+          ) : null}
         </Stack>
       ) : loading ? (
         <Inline justify="center" style={{ padding: "var(--space-4)" }}>

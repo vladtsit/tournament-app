@@ -20,6 +20,7 @@
     "lint": "npm --workspace app run lint && npm --workspace api run lint",
     "typecheck": "npm --workspace app run typecheck && npm --workspace api run typecheck",
     "test": "npm --workspace app run test --if-present && npm --workspace api run test --if-present",
+    "wipe:cosmos": "node scripts/wipe-cosmos.mjs",
     "clean": "rimraf app/dist api/dist app/node_modules api/node_modules node_modules"
   },
   "devDependencies": {

@@ -60,7 +60,16 @@
     "invalid_state": "Not allowed in this tournament state.",
     "invalid_status": "Invalid status.",
     "nothing_to_update": "Nothing to update.",
-    "invalid_sets": "Invalid sets."
+    "invalid_sets": "Invalid sets.",
+    "team_locked_by_admin": "This team has been confirmed by an admin. Contact the admin to change it.",
+    "registration_locked": "You resigned from this tournament. Ask an admin to let you back in.",
+    "not_all_confirmed": "All teams must be confirmed before you can start.",
+    "odd_player_count": "The number of registered players is odd. Add or remove someone before starting.",
+    "courts_not_assigned": "Assign first-round courts before starting.",
+    "not_in_group": "That person isn't a current member of this group.",
+    "team_assigned_twice": "Each team can only sit on one court.",
+    "unknown_team": "That team isn't part of this tournament.",
+    "unknown_court": "That court isn't configured for this group."
   },
   "tournament": {
     "none": "No tournament is open right now.",
@@ -74,14 +83,21 @@
     "status": {
       "draft": "Draft",
       "registration_open": "Open",
+      "review": "Review",
       "live": "Live",
       "ended": "Ended"
-    }
+    },
+    "stopRegistration": "Stop registration",
+    "reopenRegistration": "Reopen registration",
+    "reviewBanner": "Registration is closed. The admin is finalising teams and courts."
   },
   "registration": {
     "title": "Your registration",
     "playing": "Playing",
-    "bbq": "BBQ"
+    "bbq": "BBQ",
+    "resign": "Resign",
+    "resignWarn": "You'll need an admin to let you back in. Continue?",
+    "resignedBanner": "You resigned from this tournament. Ask an admin if you want back in."
   },
   "teams": {
     "title": "Team",
@@ -145,7 +161,44 @@
     "openDisputes": "Open disputes ({{n}})",
     "disputesTitle": "Disputed matches",
     "noDisputes": "No disputed matches.",
-    "submittedBy": "submitted by {{name}}"
+    "submittedBy": "submitted by {{name}}",
+    "players": {
+      "title": "Players",
+      "add": "Add",
+      "remove": "Remove",
+      "search": "Search group members",
+      "removeConfirm": "Remove {{name}} from the tournament?",
+      "alreadyRegistered": "Already in",
+      "resigned": "Resigned",
+      "unlock": "Unlock",
+      "empty": "No matches."
+    },
+    "teams": {
+      "title": "Teams",
+      "confirm": "Confirm",
+      "unconfirm": "Unconfirm",
+      "lockedBadge": "Locked by admin",
+      "assign": "Pair players",
+      "disband": "Disband",
+      "unpaired": "Unpaired",
+      "pickA": "Pick first player",
+      "pickB": "Pick second player"
+    },
+    "courts": {
+      "title": "First-round courts",
+      "unassigned": "Unassigned teams",
+      "green": "Green",
+      "blue": "Blue",
+      "assign": "Assign",
+      "empty": "No teams on this court yet."
+    },
+    "start": {
+      "blocked": {
+        "oddCount": "Odd number of players ({{n}}) — add or remove someone.",
+        "notConfirmed": "{{n}} team(s) still need admin confirmation.",
+        "courtsMissing": "No teams assigned to courts yet."
+      }
+    }
   },
   "help": {
     "title": "Help",

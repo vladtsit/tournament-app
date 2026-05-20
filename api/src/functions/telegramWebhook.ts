@@ -82,6 +82,7 @@ interface GroupDoc {
   settings: {
     language: SupportedLanguage;
     tiebreakRule: "regular_set" | "super_tiebreak_to_10";
+    courts?: Array<{ id: string; label: string; color: "green" | "blue" }>;
   };
   botRights: {
     canPinMessages: boolean;
@@ -93,6 +94,18 @@ interface GroupDoc {
   createdAt: string;
   updatedAt: string;
 }
+
+const DEFAULT_COURTS: Array<{
+  id: string;
+  label: string;
+  color: "green" | "blue";
+}> = [
+  { id: "1", label: "Court 1", color: "green" },
+  { id: "2", label: "Court 2", color: "green" },
+  { id: "3", label: "Court 3", color: "blue" },
+  { id: "4", label: "Court 4", color: "blue" },
+  { id: "5", label: "Court 5", color: "blue" },
+];
 
 app.http("telegramWebhook", {
   route: "telegram/webhook",
@@ -225,6 +238,10 @@ async function handleSetup(
       ...existing,
       title,
       status: "active",
+      settings: {
+        ...existing.settings,
+        courts: existing.settings.courts ?? DEFAULT_COURTS,
+      },
       botRights: {
         canPinMessages: canPin,
         canPostMessages: !!botMember.can_post_messages,
@@ -251,6 +268,7 @@ async function handleSetup(
       settings: {
         language: lang,
         tiebreakRule: "super_tiebreak_to_10",
+        courts: DEFAULT_COURTS,
       },
       botRights: {
         canPinMessages: canPin,

@@ -34,6 +34,13 @@ export type PinState =
       teamsExpected: number;
     }
   | {
+      kind: "review";
+      registeredCount: number;
+      teamsFormed: number;
+      teamsConfirmed: number;
+      courtsAssigned: boolean;
+    }
+  | {
       kind: "live";
       matchesPlayed: number;
       matchesTotal: number;
@@ -69,11 +76,15 @@ const STRINGS: Record<
     statusIdle: string;
     statusIdleHint: string;
     statusRegistration: string;
+    statusReview: string;
     statusLive: string;
     statusEnded: string;
     registeredLabel: string;
     bbqLabel: string;
     pairsLabel: (formed: number, expected: number) => string;
+    confirmedLabel: (confirmed: number, formed: number) => string;
+    courtsAssignedYes: string;
+    courtsAssignedNo: string;
     matchesLabel: (played: number, total: number) => string;
     leaderLabel: (team: string, wins: number) => string;
     noLeader: string;
@@ -84,11 +95,15 @@ const STRINGS: Record<
     statusIdle: "🟢 Ready for next tournament",
     statusIdleHint: "Tap below to register when one opens.",
     statusRegistration: "🟢 Registration is open",
+    statusReview: "🟡 Setting up — admin finalising teams",
     statusLive: "🔴 Tournament in progress",
     statusEnded: "🏁 Tournament ended",
     registeredLabel: "Registered",
     bbqLabel: "BBQ",
     pairsLabel: (f, e) => `Pairs formed: <b>${f}</b> of <b>${e}</b>`,
+    confirmedLabel: (c, f) => `Confirmed: <b>${c}</b> of <b>${f}</b>`,
+    courtsAssignedYes: "🏟 Courts assigned",
+    courtsAssignedNo: "🏟 Courts not assigned yet",
     matchesLabel: (p, t) => `Matches played: <b>${p}</b> of <b>${t}</b>`,
     leaderLabel: (team, wins) =>
       `🏅 Leader: <b>${team}</b> · ${wins} ${wins === 1 ? "win" : "wins"}`,
@@ -99,11 +114,15 @@ const STRINGS: Record<
     statusIdle: "🟢 Listos para el próximo torneo",
     statusIdleHint: "Toca abajo para inscribirte cuando se abra uno.",
     statusRegistration: "🟢 Inscripciones abiertas",
+    statusReview: "🟡 Preparativos — el admin finaliza los equipos",
     statusLive: "🔴 Torneo en curso",
     statusEnded: "🏁 Torneo finalizado",
     registeredLabel: "Inscritos",
     bbqLabel: "BBQ",
     pairsLabel: (f, e) => `Parejas formadas: <b>${f}</b> de <b>${e}</b>`,
+    confirmedLabel: (c, f) => `Confirmadas: <b>${c}</b> de <b>${f}</b>`,
+    courtsAssignedYes: "🏟 Pistas asignadas",
+    courtsAssignedNo: "🏟 Pistas por asignar",
     matchesLabel: (p, t) => `Partidos jugados: <b>${p}</b> de <b>${t}</b>`,
     leaderLabel: (team, wins) =>
       `🏅 Líder: <b>${team}</b> · ${wins} ${wins === 1 ? "victoria" : "victorias"}`,
@@ -115,11 +134,15 @@ const STRINGS: Record<
     statusIdleHint:
       "Нажмите кнопку ниже, чтобы записаться, когда он откроется.",
     statusRegistration: "🟢 Регистрация открыта",
+    statusReview: "🟡 Подготовка — админ завершает формирование команд",
     statusLive: "🔴 Турнир идёт",
     statusEnded: "🏁 Турнир завершён",
     registeredLabel: "Зарегистрировано",
     bbqLabel: "BBQ",
     pairsLabel: (f, e) => `Пар собрано: <b>${f}</b> из <b>${e}</b>`,
+    confirmedLabel: (c, f) => `Подтверждено: <b>${c}</b> из <b>${f}</b>`,
+    courtsAssignedYes: "🏟 Корты назначены",
+    courtsAssignedNo: "🏟 Корты ещё не назначены",
     matchesLabel: (p, t) => `Сыграно матчей: <b>${p}</b> из <b>${t}</b>`,
     leaderLabel: (team, wins) =>
       `🏅 Лидер: <b>${team}</b> · ${wins} ${pluralRu(wins, ["победа", "победы", "побед"])}`,
@@ -162,6 +185,17 @@ export function renderPinnedMessage(ctx: PinnedMessageContext): PinnedRendered {
         "",
         `👥 ${s.registeredLabel}: <b>${st.registeredCount}</b>   🍖 ${s.bbqLabel}: <b>${st.bbqCount}</b>`,
         `🤝 ${s.pairsLabel(st.teamsFormed, st.teamsExpected)}`,
+      );
+      break;
+    }
+    case "review": {
+      const st = ctx.state;
+      lines.push(
+        `🎾 <b>${s.statusReview}</b>`,
+        "",
+        `👥 ${s.registeredLabel}: <b>${st.registeredCount}</b>`,
+        `✅ ${s.confirmedLabel(st.teamsConfirmed, st.teamsFormed)}`,
+        st.courtsAssigned ? s.courtsAssignedYes : s.courtsAssignedNo,
       );
       break;
     }

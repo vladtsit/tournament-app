@@ -47,6 +47,7 @@ interface TeamDoc {
   tournamentId: string;
   players: Array<{ userId: string; firstName: string; lastName?: string }>;
   status: "active" | "disbanded";
+  confirmedByAdmin: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -251,6 +252,7 @@ async function formTeam(
       playerSummary(partnerUserId, partnerReg.resource),
     ],
     status: "active",
+    confirmedByAdmin: false,
     createdBy: userId,
     createdAt: now,
     updatedAt: now,

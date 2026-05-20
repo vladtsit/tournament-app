@@ -44,8 +44,11 @@ interface GroupDoc {
 interface TournamentDoc {
   id: string;
   groupId: string;
-  status: "draft" | "registration_open" | "live" | "ended";
+  status: "draft" | "registration_open" | "review" | "live" | "ended";
   endedAt?: string;
+  settings?: {
+    firstRoundCourts?: Array<{ courtId: string; teamIds: string[] }>;
+  };
   finalStandings?: Array<{
     rank: number;
     teamId: string;
@@ -196,7 +199,7 @@ async function computePinState(group: GroupDoc): Promise<PinState> {
     .items.query<TournamentDoc>(
       {
         query:
-          "SELECT TOP 1 * FROM c WHERE c.groupId = @g AND c.status IN ('draft','registration_open','live') ORDER BY c.createdAt DESC",
+          "SELECT TOP 1 * FROM c WHERE c.groupId = @g AND c.status IN ('draft','registration_open','review','live') ORDER BY c.createdAt DESC",
         parameters: [{ name: "@g", value: group.groupId }],
       },
       { partitionKey: group.groupId },
@@ -207,6 +210,9 @@ async function computePinState(group: GroupDoc): Promise<PinState> {
   if (current) {
     if (current.status === "live") {
       return await liveState(group.groupId, current.id);
+    }
+    if (current.status === "review") {
+      return await reviewState(group.groupId, current);
     }
     return await registrationState(group.groupId, current.id);
   }
@@ -275,6 +281,57 @@ async function registrationState(
     bbqCount: c.bbq,
     teamsFormed,
     teamsExpected,
+  };
+}
+
+async function reviewState(
+  groupId: string,
+  tournament: TournamentDoc,
+): Promise<PinState> {
+  const [regsQ, teamsQ] = await Promise.all([
+    containers_
+      .registrations()
+      .items.query<{ playing: number }>(
+        {
+          query:
+            "SELECT VALUE { playing: SUM(c.playing ? 1 : 0) } FROM c WHERE c.groupId = @g AND c.tournamentId = @t AND (NOT IS_DEFINED(c.resigned) OR c.resigned = false)",
+          parameters: [
+            { name: "@g", value: groupId },
+            { name: "@t", value: tournament.id },
+          ],
+        },
+        { partitionKey: groupId },
+      )
+      .fetchAll(),
+    containers_
+      .teams()
+      .items.query<{ id: string; confirmedByAdmin?: boolean; status?: string }>(
+        {
+          query:
+            "SELECT c.id, c.confirmedByAdmin, c.status FROM c WHERE c.groupId = @g AND c.tournamentId = @t AND (NOT IS_DEFINED(c.status) OR c.status = 'active')",
+          parameters: [
+            { name: "@g", value: groupId },
+            { name: "@t", value: tournament.id },
+          ],
+        },
+        { partitionKey: groupId },
+      )
+      .fetchAll(),
+  ]);
+  const playing = regsQ.resources[0]?.playing ?? 0;
+  const teamsFormed = teamsQ.resources.length;
+  const teamsConfirmed = teamsQ.resources.filter(
+    (t) => t.confirmedByAdmin === true,
+  ).length;
+  const courts = tournament.settings?.firstRoundCourts ?? [];
+  const courtsAssigned =
+    courts.length > 0 && courts.some((c) => c.teamIds.length > 0);
+  return {
+    kind: "review",
+    registeredCount: playing,
+    teamsFormed,
+    teamsConfirmed,
+    courtsAssigned,
   };
 }
 
