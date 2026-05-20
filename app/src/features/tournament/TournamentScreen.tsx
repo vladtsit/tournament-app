@@ -277,8 +277,10 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
   const tournament = data?.tournament ?? null;
   const inTelegram = isInTelegram();
   const canCreate = !tournament && isAdmin && draftName.trim().length > 0;
-  const canStart =
-    !!tournament && isAdmin && tournament.status === "registration_open";
+  // Admin in registration_open|review is delegated to AdminTournamentScreen,
+  // which owns its own primary action surface; do not wire MainButton here
+  // (would otherwise show a stale "Start tournament" that bypasses review).
+  const canStart = false;
   const canEnd =
     !!tournament && isAdmin && tournament.status === "live" && !data?.team;
 

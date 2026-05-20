@@ -75,7 +75,7 @@
   "tournament": {
     "none": "No hay ningún torneo abierto ahora mismo.",
     "create": "Crear un nuevo torneo",
-    "start": "Iniciar torneo (cerrar inscripción)",
+    "start": "Iniciar torneo",
     "end": "Finalizar torneo",
     "endConfirm": "¿Finalizar este torneo? No se podrán registrar más partidos.",
     "counts": "Juegan: {{playing}} · BBQ: {{bbq}}",

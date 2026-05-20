@@ -75,7 +75,7 @@
   "tournament": {
     "none": "No tournament is open right now.",
     "create": "Start a new tournament",
-    "start": "Start tournament (close registration)",
+    "start": "Start tournament",
     "end": "End tournament",
     "endConfirm": "End this tournament? No more matches can be submitted.",
     "counts": "Playing: {{playing}} · BBQ: {{bbq}}",
