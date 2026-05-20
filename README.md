@@ -4,7 +4,7 @@ Multi-tenant Telegram Mini App for organising casual pádel tournaments.
 
 **Stack:** Vanilla React 18 + Vite 5 (TS) · Azure Static Web Apps (Free) · Managed Azure Functions v4 (Node 22 TS) · Azure Cosmos DB for NoSQL (Free Tier, shared-throughput DB).
 
-**Status:** Phases 0–5 shipped; Phase 5.5 pre-preview hardening shipped (opposing-team match confirm, retry-safe idempotency, `Retry-After` on 429, silent JWT refresh, Telegram fetch timeout). Ready for closed preview testing in a real Telegram group. Roadmap: [docs/implementation_plan.md](docs/implementation_plan.md).
+**Status:** Phases 0–5 shipped; Phase 5.5 pre-preview hardening shipped; **Phase 6 (review state + admin tournament tools) shipped.** Ready for closed preview testing in a real Telegram group. Roadmap: [docs/implementation_plan.md](docs/implementation_plan.md).
 
 Full requirements: [padel_telegram_mini_app_requirements.md](padel_telegram_mini_app_requirements.md).
 
@@ -62,5 +62,7 @@ links:
 - Webhook (re-)registration after secret rotation → `docs/operations.md#telegram-webhook`
 - Rotating SWA app settings (Cosmos key, JWT secret, bot token) → `docs/operations.md#secret-rotation`
 - Adding a new group / promoting an admin → `docs/operations.md#adding-a-group`
+- Per-group settings (e.g. `playersCanFormTeams` toggle) → `docs/operations.md#group-settings`
 - Enabling Application Insights (Free 1 GB/month) → `docs/operations.md#application-insights`
 - Exporting BBQ list and match results → `docs/operations.md#csv-exports`
+- Wiping Cosmos containers for a clean restart → `docs/operations.md#wiping-cosmos`

@@ -123,6 +123,33 @@ Then patch the `isAdmin` flag (use the Cosmos VS Code extension for a UI, or
 the Data Explorer in the Azure portal). The change takes effect on the
 user's next request (no cache).
 
+## Group settings
+
+Per-group configuration lives under `groups/{groupId}.settings`. Most
+fields are seeded by `/setup` (and back-filled on re-setup if missing);
+flip them manually with the Cosmos VS Code extension when needed.
+
+| Field                  | Type                                                                | Default after `/setup`              | Effect                                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `language`             | `"en" \| "es" \| "ru"`                                              | Admin's Telegram language           | Localises bot replies and the pinned message.                                                                                     |
+| `courts`               | `Array<{id,label,color:"green"\|"blue"}>`                           | 5 courts (id 1–2 green, 3–5 blue)   | First-round court picker on the AdminTournamentScreen reads from this list.                                                       |
+| `playersCanFormTeams`  | `boolean`                                                           | `false`                             | When `false`, `POST /api/tournaments/{id}/teams` returns `403 players_cannot_form_teams` and the player UI hides find-partner. Flip to `true` to let players self-pair again. |
+| `tiebreakRule`         | `"regular_set" \| "super_tiebreak_to_10"`                           | `"super_tiebreak_to_10"`            | Retained for back-compat; ignored by the casual scoring engine (Phase 5.6).                                                       |
+
+To flip `playersCanFormTeams` on an existing group without redeploying:
+
+```bash
+# Quickest: open Cosmos DB → padel → groups, find the group doc, edit
+# settings.playersCanFormTeams, Save. Takes effect on the next request.
+
+# Or via CLI (the doc must already exist):
+GROUP_ID="<group cosmos id>"
+az cosmosdb sql container query -g rg-freetier -a cdb-free -d padel -n groups \
+  --query-text "SELECT * FROM c WHERE c.id = '$GROUP_ID'" \
+  --partition-key-value "$GROUP_ID"
+# then PATCH via the Data Explorer or the REST API.
+```
+
 ## Application Insights
 
 Wiring is **opt-in**: if `APPLICATIONINSIGHTS_CONNECTION_STRING` is unset,
@@ -192,3 +219,29 @@ done
 # Re-trigger the GitHub Actions deploy for the latest commit:
 gh workflow run "Azure Static Web Apps CI/CD" --ref main
 ```
+
+## Wiping Cosmos
+
+`scripts/wipe-cosmos.mjs` (exposed as `npm run wipe:cosmos`) deletes every
+document in the 12 application containers. Useful when a schema change
+makes existing data incompatible, or to reset a preview environment.
+
+```bash
+# Dry-run (default): prints what would be deleted, touches nothing.
+COSMOS_ENDPOINT="https://cdb-free.documents.azure.com:443/" \
+COSMOS_KEY="<account key>" \
+COSMOS_DATABASE="padel" \
+npm run wipe:cosmos
+
+# Actually delete everything in the 12 containers:
+COSMOS_ENDPOINT=... COSMOS_KEY=... COSMOS_DATABASE=padel \
+npm run wipe:cosmos -- --confirm
+```
+
+Alternatively set `COSMOS_CONNECTION_STRING` instead of `COSMOS_ENDPOINT` +
+`COSMOS_KEY`. The script never drops containers or the database itself, so
+indexing and partition-key config stay intact.
+
+**Important:** after a wipe, every group admin must re-run `/setup` in
+their Telegram group to re-seed `groups/{id}` (including
+`settings.courts` and `settings.playersCanFormTeams`).

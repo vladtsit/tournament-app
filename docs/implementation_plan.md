@@ -351,7 +351,45 @@ games against each other submit multiple records — each counts independently.
 
 ---
 
-## Decisions
+## Phase 6 — Registration / teams / lifecycle refactor ✅ (shipped)
+
+Goal: introduce a `review` state between `registration_open` and `live` so
+admins can vet the roster and lock teams before the tournament starts; give
+admins first-class controls for players, teams, and first-round courts; and
+let groups optionally restrict team formation to admin-only.
+
+**Status (shipped, May 2026)**
+
+- ✅ **State machine** (`shared/tournamentState.ts`): `draft → registration_open → review → live → ended` with a `TRANSITIONS` table and `assertCanTransition` helper. New endpoints `POST /api/tournaments/{id}/stop-registration` and `…/reopen-registration` flip between the first two states; `…/start` now requires `review` and enforces `not_all_confirmed`, `odd_player_count`, `courts_not_assigned` before promoting to `live`.
+- ✅ **Per-team admin confirm** (`teams.confirmedByAdmin`): admin endpoints `POST|DELETE /api/teams/{teamId}/admin-confirm`, `POST /api/tournaments/{id}/admin/teams` (create with `confirmedByAdmin=true`), `DELETE /api/teams/{teamId}/admin-disband`. `teamDisband` (player-side) returns `409 team_locked_by_admin` once a team is confirmed; resigning still tears the team down.
+- ✅ **Admin player roster controls**: `POST /api/tournaments/{id}/admin/registrations`, `DELETE /api/tournaments/{id}/admin/registrations/{userId}`, `POST /api/tournaments/{id}/admin/registrations/{userId}/unlock` (clears the `resigned` flag). `GET /api/groups/{groupId}/members?q=&tournamentId=` returns the active group roster annotated with `alreadyRegistered/isPlaying/resigned` for the admin add-player picker.
+- ✅ **Resign lock** (`registrationUpsert.ts`): toggling `playing:true → false` sets `resigned=true`, `resignedAt`; re-entry is blocked with `409 registration_locked` until an admin unlocks. Confirmed-by-admin teams that contain the resigning player are still disbanded so the partner returns to the unpaired pool.
+- ✅ **First-round courts**: `groups.settings.courts` seeded by `/setup` to 5 fixed entries (id `1`,`2` green; `3`,`4`,`5` blue). `PUT /api/tournaments/{id}/courts` (review-only) accepts `{ assignments: [{ courtId, teamIds[] }] }`, validates each team belongs to the tournament and is referenced at most once, and stores the result in `tournaments.settings.firstRoundCourts`.
+- ✅ **`tournamentCurrent` enrichment**: admin callers now receive `registrations[]`, `teams[]`, `group.courts`; every caller receives `group.playersCanFormTeams` so the SPA can branch in one round-trip.
+- ✅ **Pinned message review variant** (`shared/pinnedMessage.ts`, `shared/refreshPin.ts`): new `kind: "review"` state with `statusReview` / `confirmedLabel` / `courtsAssignedYes`/`No` strings localised in en/es/ru.
+- ✅ **Frontend — `AdminTournamentScreen`** (`app/src/features/admin/AdminTournamentScreen.tsx`): Players / Teams / Courts sections plus a sticky bottom bar with **Stop registration** / **Reopen** / **Start** (with inline blocker reasons). `TournamentScreen` widens its status union, delegates to the admin screen when `isAdmin && (registration_open | review)`, shows a review banner for non-admins, surfaces the locked-by-admin badge, and prompts before a player resigns. Admin pair modal remembers the last `{a, b}` per tournament in `localStorage` (`lastAdminPair_${tournament.id}`) and pre-restores it when both are still unpaired.
+- ✅ **`playersCanFormTeams` group toggle** (`groups.settings.playersCanFormTeams`, defaults to `false` on new `/setup`, also back-filled to `false` for existing groups on re-setup). When `false`, `teamCreate` returns `403 players_cannot_form_teams` and the player-side TeamSection renders an "Admin will form teams" empty-state instead of the find-partner list.
+- ✅ **Tooling**: `scripts/wipe-cosmos.mjs` (`npm run wipe:cosmos`, dry-run by default; `-- --confirm` to actually delete) wipes the 12 application containers when the schema needs a clean slate.
+
+**Bug fixes during rollout**
+
+- **Azure Functions reserves the `admin/` path prefix.** The first cut of the 6 admin endpoints used routes like `admin/tournaments/{id}/registrations`; they silently failed to register with *"The specified route conflicts with one or more built in routes"*, so SWA returned 404 and the SPA surfaced *"Something went wrong. Try again."* Renamed all six (`tournaments/{id}/admin/...`, `teams/{teamId}/admin-confirm`, `teams/{teamId}/admin-disband`). **Lesson learned**: never start a Functions HTTP route with `admin/` or `runtime/`.
+
+**Verification**
+
+1. `npm run typecheck && npm run lint && npm run build` — green.
+2. End-to-end on Azure: admin can Stop registration → see review screen → add/remove/unlock players, confirm teams, assign courts, Start; start is blocked with inline reason when any guard fails.
+3. With `groups.settings.playersCanFormTeams=false`, a player opening the app sees the "Admin will form teams" empty-state and `POST .../teams` is rejected with `403`.
+4. App Insights confirms every renamed endpoint registers and is invoked (no remaining route-conflict traces).
+
+**Compatibility**
+
+- All new fields are optional with safe falsy defaults; no Cosmos wipe required for existing data.
+- Existing groups created before this phase have no `groups.settings.courts` or `playersCanFormTeams` — admins must re-run `/setup` once to back-fill both. Existing `registration_open` tournaments must transition through **Stop registration** before they can be started.
+
+---
+
+
 
 - **One SWA, sub-path SPA**: app under `/tournamentes/` via `vite base` + SWA route rewrite; root `/` is a static placeholder. Both live in `app/dist` and ship in one workflow run.
 - **Cosmos auth**: account key in SWA app settings (SWA Free has no managed identity); singleton `CosmosClient`.
