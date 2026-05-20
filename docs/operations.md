@@ -129,12 +129,12 @@ Per-group configuration lives under `groups/{groupId}.settings`. Most
 fields are seeded by `/setup` (and back-filled on re-setup if missing);
 flip them manually with the Cosmos VS Code extension when needed.
 
-| Field                  | Type                                                                | Default after `/setup`              | Effect                                                                                                                            |
-| ---------------------- | ------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `language`             | `"en" \| "es" \| "ru"`                                              | Admin's Telegram language           | Localises bot replies and the pinned message.                                                                                     |
-| `courts`               | `Array<{id,label,color:"green"\|"blue"}>`                           | 5 courts (id 1–2 green, 3–5 blue)   | First-round court picker on the AdminTournamentScreen reads from this list.                                                       |
-| `playersCanFormTeams`  | `boolean`                                                           | `false`                             | When `false`, `POST /api/tournaments/{id}/teams` returns `403 players_cannot_form_teams` and the player UI hides find-partner. Flip to `true` to let players self-pair again. |
-| `tiebreakRule`         | `"regular_set" \| "super_tiebreak_to_10"`                           | `"super_tiebreak_to_10"`            | Retained for back-compat; ignored by the casual scoring engine (Phase 5.6).                                                       |
+| Field                 | Type                                      | Default after `/setup`            | Effect                                                                                                                                                                        |
+| --------------------- | ----------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `language`            | `"en" \| "es" \| "ru"`                    | Admin's Telegram language         | Localises bot replies and the pinned message.                                                                                                                                 |
+| `courts`              | `Array<{id,label,color:"green"\|"blue"}>` | 5 courts (id 1–2 green, 3–5 blue) | First-round court picker on the AdminTournamentScreen reads from this list.                                                                                                   |
+| `playersCanFormTeams` | `boolean`                                 | `false`                           | When `false`, `POST /api/tournaments/{id}/teams` returns `403 players_cannot_form_teams` and the player UI hides find-partner. Flip to `true` to let players self-pair again. |
+| `tiebreakRule`        | `"regular_set" \| "super_tiebreak_to_10"` | `"super_tiebreak_to_10"`          | Retained for back-compat; ignored by the casual scoring engine (Phase 5.6).                                                                                                   |
 
 To flip `playersCanFormTeams` on an existing group without redeploying:
 

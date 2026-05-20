@@ -735,8 +735,7 @@ function TeamSection({
   const pendingLabel = pendingPartner ? fullName(pendingPartner) : "";
 
   useMainButton({
-    visible:
-      inTelegram && !team && canFormTeams && !!pendingPartnerId && !busy,
+    visible: inTelegram && !team && canFormTeams && !!pendingPartnerId && !busy,
     text: pendingLabel ? t("teams.pairWith", { name: pendingLabel }) : "",
     enabled: !busy,
     showProgress: busy,

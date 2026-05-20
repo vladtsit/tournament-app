@@ -242,8 +242,7 @@ async function handleSetup(
       settings: {
         ...existing.settings,
         courts: existing.settings.courts ?? DEFAULT_COURTS,
-        playersCanFormTeams:
-          existing.settings.playersCanFormTeams ?? false,
+        playersCanFormTeams: existing.settings.playersCanFormTeams ?? false,
       },
       botRights: {
         canPinMessages: canPin,

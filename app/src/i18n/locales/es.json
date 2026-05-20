@@ -213,15 +213,15 @@
       },
       "registration": {
         "title": "Inscripción",
-        "body": "En la pestaña Actual, activa ‘Juego’ para apuntarte al próximo torneo. Activa ‘BBQ’ si te quedas a comer. Puedes cambiar ambas opciones mientras la inscripción esté abierta."
+        "body": "En la pestaña Actual, activa ‘Juego’ para apuntarte al próximo torneo. Activa ‘BBQ’ si te quedas a comer. Puedes cambiar ambas opciones mientras la inscripción esté abierta. Cuando el admin pulse ‘Cerrar inscripción’, el torneo entra en un breve estado de revisión donde el admin fija la lista, confirma equipos y asigna pistas antes de iniciar. Aviso: si te das de baja (desactivas ‘Juego’) no puedes volver a apuntarte por tu cuenta — pídele al admin que te desbloquee."
       },
       "teams": {
         "title": "Formar pareja",
-        "body": "Cuando estés marcado como Juego, verás a todos los demás que buscan compañero. Toca ‘Emparejar’ y confirma — la pareja se forma al instante. La pareja anterior aparece primero con una estrella. Usa ‘Salir del equipo’ si cambias de idea antes de que empiece el torneo."
+        "body": "Por defecto, el admin forma todas las parejas — verás ‘El admin formará los equipos’ hasta que lo haga. Si tu grupo lo permite, verás a los demás jugadores sin pareja: toca ‘Emparejar’ y confirma para formar el equipo. Tu pareja anterior aparece primero con una estrella. Puedes ‘Salir del equipo’ antes del inicio — salvo que el admin ya haya confirmado el equipo, en cuyo caso solo darte de baja lo romperá."
       },
       "live": {
         "title": "Durante un torneo en vivo",
-        "body": "Cuando el admin inicia el torneo aparece el formulario de partido. Elige al rival, escribe el marcador del juego (p. ej. 6-4 u 11-8) y pulsa el botón principal de Telegram (o Enviar). Un registro = un juego; si jugáis varios, enviad un registro por cada uno."
+        "body": "Cuando el admin inicia el torneo aparece el formulario de partido. Las asignaciones de pista de la primera ronda (verdes 1–2, azules 3–5) se muestran arriba. Elige al rival, escribe el marcador del juego (p. ej. 6-4 u 11-8) y pulsa el botón principal de Telegram (o Enviar). Un registro = un juego; si jugáis varios, enviad un registro por cada uno."
       },
       "matches": {
         "title": "Confirmar y disputar",
@@ -241,7 +241,7 @@
       },
       "admin": {
         "title": "Herramientas de admin",
-        "body": "Los admins del grupo pueden crear torneos, iniciarlos (cierra la inscripción), finalizarlos (congela la clasificación y reparte puntos), editar o borrar resultados, marcar un partido disputado como confirmado y exportar CSV de inscripciones y resultados."
+        "body": "Los admins llevan los torneos por borrador → inscripción → revisión → en juego → finalizado. Durante inscripción y revisión hay una pantalla dedicada con tres secciones: Jugadores (añadir/quitar a cualquiera del grupo, desbloquear a alguien que se dio de baja), Equipos (formar parejas, confirmarlas para bloquear la alineación o disolverlas) y Pistas (asignar equipos a las 5 pistas de la primera ronda — 1–2 verdes, 3–5 azules). No se puede iniciar hasta que todos los inscritos en ‘Juego’ estén en un equipo confirmado, el número de jugadores sea par y haya al menos una pista asignada. Tras el inicio sigues pudiendo editar/borrar resultados, resolver disputas y exportar CSV. Que los jugadores puedan emparejarse solos es un ajuste por grupo y viene como ‘solo admin’ por defecto."
       },
       "language": {
         "title": "Idioma",

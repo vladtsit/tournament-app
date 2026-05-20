@@ -213,15 +213,15 @@
       },
       "registration": {
         "title": "Registration",
-        "body": "On the Current tab, toggle ‘Playing’ to add yourself to the next tournament. Toggle ‘BBQ’ if you’ll stay for food. You can change either at any time while registration is open."
+        "body": "On the Current tab, toggle ‘Playing’ to add yourself to the next tournament. Toggle ‘BBQ’ if you’ll stay for food. You can change either while registration is open. Once the admin presses ‘Stop registration’, the tournament enters a short review state where the admin locks the roster, confirms teams and assigns courts before starting. Heads-up: if you resign (switch Playing off) you cannot rejoin on your own — ask the admin to unlock you."
       },
       "teams": {
         "title": "Pairing up",
-        "body": "Once you’re marked Playing, you’ll see everyone else who’s looking for a partner. Tap ‘Pair up’ and confirm — the team is formed instantly. The previous partner you played with is shown first with a star. Use ‘Leave team’ if you change your mind before the tournament starts."
+        "body": "By default the admin forms all teams for you — you’ll just see ‘Admin will form teams’ until they do. If your group allows player pairing, you’ll see the other unpaired players: tap ‘Pair up’ and confirm to form the team. Your previous partner is shown first with a star. You can ‘Leave team’ any time before start — unless the admin has confirmed your team, in which case only resigning will break it."
       },
       "live": {
         "title": "During a live tournament",
-        "body": "When the admin starts the tournament, the Submit-a-match form appears. Pick the opposing team, type the game score (e.g. 6-4 or 11-8), then tap the Telegram main button (or Submit). One score pair per record — if you play several games, submit one record per game."
+        "body": "When the admin starts the tournament, the Submit-a-match form appears. First-round court assignments (green courts 1–2, blue courts 3–5) are shown at the top. Pick the opposing team, type the game score (e.g. 6-4 or 11-8), then tap the Telegram main button (or Submit). One score pair per record — if you play several games, submit one record per game."
       },
       "matches": {
         "title": "Confirm and dispute",
@@ -241,7 +241,7 @@
       },
       "admin": {
         "title": "Admin tools",
-        "body": "Group admins can create tournaments, start them (which closes registration and forms the brackets), end them (which freezes the leaderboard and awards points), edit or delete results, mark a disputed match confirmed, and export CSVs of registrations and results."
+        "body": "Admins create tournaments and shepherd them through draft → registration → review → live → ended. During registration and review you get a dedicated screen with three sections: Players (add/remove anyone from the group, unlock a resigned player), Teams (form pairs, confirm them to lock the lineup, or disband), and Courts (assign teams to the 5 first-round courts — 1–2 green, 3–5 blue). Starting is blocked until every playing registration is in a confirmed team, the player count is even, and at least one first-round court is assigned. After Start you can still edit/delete results, resolve disputes, and export CSVs of registrations and results. Whether players are allowed to self-pair is a per-group setting that defaults to admin-only."
       },
       "language": {
         "title": "Language",

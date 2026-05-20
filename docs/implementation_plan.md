@@ -373,7 +373,7 @@ let groups optionally restrict team formation to admin-only.
 
 **Bug fixes during rollout**
 
-- **Azure Functions reserves the `admin/` path prefix.** The first cut of the 6 admin endpoints used routes like `admin/tournaments/{id}/registrations`; they silently failed to register with *"The specified route conflicts with one or more built in routes"*, so SWA returned 404 and the SPA surfaced *"Something went wrong. Try again."* Renamed all six (`tournaments/{id}/admin/...`, `teams/{teamId}/admin-confirm`, `teams/{teamId}/admin-disband`). **Lesson learned**: never start a Functions HTTP route with `admin/` or `runtime/`.
+- **Azure Functions reserves the `admin/` path prefix.** The first cut of the 6 admin endpoints used routes like `admin/tournaments/{id}/registrations`; they silently failed to register with _"The specified route conflicts with one or more built in routes"_, so SWA returned 404 and the SPA surfaced _"Something went wrong. Try again."_ Renamed all six (`tournaments/{id}/admin/...`, `teams/{teamId}/admin-confirm`, `teams/{teamId}/admin-disband`). **Lesson learned**: never start a Functions HTTP route with `admin/` or `runtime/`.
 
 **Verification**
 
@@ -388,8 +388,6 @@ let groups optionally restrict team formation to admin-only.
 - Existing groups created before this phase have no `groups.settings.courts` or `playersCanFormTeams` — admins must re-run `/setup` once to back-fill both. Existing `registration_open` tournaments must transition through **Stop registration** before they can be started.
 
 ---
-
-
 
 - **One SWA, sub-path SPA**: app under `/tournamentes/` via `vite base` + SWA route rewrite; root `/` is a static placeholder. Both live in `app/dist` and ship in one workflow run.
 - **Cosmos auth**: account key in SWA app settings (SWA Free has no managed identity); singleton `CosmosClient`.
