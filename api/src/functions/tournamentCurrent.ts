@@ -105,19 +105,36 @@ app.http("tournamentCurrent", {
 
     // Admins get the full registration list, all teams, and court config so
     // the SPA can render the AdminTournamentScreen without extra calls.
-    const membership = await containers_
-      .groupUsers()
-      .item(`${ctx.groupId}_${ctx.userId}`, ctx.groupId)
-      .read<{ isAdmin?: boolean }>()
-      .catch(() => null);
+    // Everyone gets the group's `playersCanFormTeams` toggle.
+    const [membership, groupRead] = await Promise.all([
+      containers_
+        .groupUsers()
+        .item(`${ctx.groupId}_${ctx.userId}`, ctx.groupId)
+        .read<{ isAdmin?: boolean }>()
+        .catch(() => null),
+      containers_
+        .groups()
+        .item(t.groupId, t.groupId)
+        .read<{
+          settings?: { courts?: unknown; playersCanFormTeams?: boolean };
+        }>()
+        .catch(() => null),
+    ]);
     const isAdmin = membership?.resource?.isAdmin === true;
+    const groupSettings = groupRead?.resource?.settings;
+    const groupInfo: {
+      playersCanFormTeams: boolean;
+      courts?: unknown;
+    } = {
+      playersCanFormTeams: groupSettings?.playersCanFormTeams !== false,
+    };
     let extras: {
       registrations?: RegistrationDoc[];
       teams?: TeamDoc[];
-      group?: { courts?: unknown };
     } = {};
     if (isAdmin) {
-      const [regsQ, teamsQ, groupRead] = await Promise.all([
+      groupInfo.courts = groupSettings?.courts;
+      const [regsQ, teamsQ] = await Promise.all([
         containers_
           .registrations()
           .items.query<RegistrationDoc>(
@@ -146,16 +163,10 @@ app.http("tournamentCurrent", {
             { partitionKey: t.groupId },
           )
           .fetchAll(),
-        containers_
-          .groups()
-          .item(t.groupId, t.groupId)
-          .read<{ settings?: { courts?: unknown } }>()
-          .catch(() => null),
       ]);
       extras = {
         registrations: regsQ.resources,
         teams: teamsQ.resources,
-        group: { courts: groupRead?.resource?.settings?.courts },
       };
     }
 
@@ -166,6 +177,7 @@ app.http("tournamentCurrent", {
         registration: regRead?.resource ?? null,
         team,
         counts,
+        group: groupInfo,
         ...extras,
       },
     };

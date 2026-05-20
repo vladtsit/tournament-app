@@ -80,6 +80,7 @@ interface CurrentResponse {
   registration: RegistrationDoc | null;
   team: TeamDoc | null;
   counts: { playing: number; bbq: number };
+  group?: { playersCanFormTeams?: boolean; courts?: unknown };
 }
 
 interface LookingResponse {
@@ -530,6 +531,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           tournamentId={data.tournament.id}
           groupId={groupId}
           team={data.team}
+          canFormTeams={data.group?.playersCanFormTeams !== false}
           onChange={reload}
         />
       ) : null}
@@ -650,11 +652,13 @@ function TeamSection({
   tournamentId,
   groupId,
   team,
+  canFormTeams,
   onChange,
 }: {
   tournamentId: string;
   groupId: string;
   team: TeamDoc | null;
+  canFormTeams: boolean;
   onChange: () => Promise<void>;
 }): JSX.Element {
   const { t } = useTranslation();
@@ -667,7 +671,7 @@ function TeamSection({
   const inTelegram = isInTelegram();
 
   const reload = useCallback(async (): Promise<void> => {
-    if (team) {
+    if (team || !canFormTeams) {
       setPlayers([]);
       setLoading(false);
       return;
@@ -687,7 +691,7 @@ function TeamSection({
     } finally {
       setLoading(false);
     }
-  }, [team, tournamentId, groupId]);
+  }, [team, canFormTeams, tournamentId, groupId]);
 
   useEffect(() => {
     void reload();
@@ -731,7 +735,8 @@ function TeamSection({
   const pendingLabel = pendingPartner ? fullName(pendingPartner) : "";
 
   useMainButton({
-    visible: inTelegram && !team && !!pendingPartnerId && !busy,
+    visible:
+      inTelegram && !team && canFormTeams && !!pendingPartnerId && !busy,
     text: pendingLabel ? t("teams.pairWith", { name: pendingLabel }) : "",
     enabled: !busy,
     showProgress: busy,
@@ -817,6 +822,12 @@ function TeamSection({
         <Inline justify="center" style={{ padding: "var(--space-4)" }}>
           <Spinner />
         </Inline>
+      ) : !canFormTeams ? (
+        <EmptyState
+          icon={<UserPlus size={28} />}
+          title={t("teams.adminOnlyTitle")}
+          body={t("teams.adminOnlyBody")}
+        />
       ) : sortedCandidates.length === 0 ? (
         <EmptyState
           icon={<UserPlus size={28} />}

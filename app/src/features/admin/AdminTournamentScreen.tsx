@@ -319,10 +319,32 @@ function AdminTournamentScreenInner({
     });
 
   // ── Pair modal ───────────────────────────────────────────────────────
+  const lastPairKey = `lastAdminPair_${tournament.id}`;
   const [pairOpen, setPairOpen] = useState(false);
   const [pairA, setPairA] = useState<string | null>(null);
   const [pairB, setPairB] = useState<string | null>(null);
   const candidatesForPair = unpaired;
+  const openPairModal = (): void => {
+    let restoredA: string | null = null;
+    let restoredB: string | null = null;
+    try {
+      const raw = window.localStorage.getItem(lastPairKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { a?: unknown; b?: unknown };
+        const a = typeof parsed.a === "string" ? parsed.a : null;
+        const b = typeof parsed.b === "string" ? parsed.b : null;
+        const stillUnpaired = (id: string | null): boolean =>
+          !!id && unpaired.some((r) => r.userId === id);
+        if (stillUnpaired(a)) restoredA = a;
+        if (stillUnpaired(b) && b !== restoredA) restoredB = b;
+      }
+    } catch {
+      // ignore malformed value
+    }
+    setPairA(restoredA);
+    setPairB(restoredB);
+    setPairOpen(true);
+  };
   const submitPair = (): Promise<void> =>
     run(async () => {
       if (!pairA || !pairB || pairA === pairB) return;
@@ -330,6 +352,14 @@ function AdminTournamentScreenInner({
         method: "POST",
         body: { userIdA: pairA, userIdB: pairB },
       });
+      try {
+        window.localStorage.setItem(
+          lastPairKey,
+          JSON.stringify({ a: pairA, b: pairB }),
+        );
+      } catch {
+        // ignore storage failures (quota / private mode)
+      }
       setPairOpen(false);
       setPairA(null);
       setPairB(null);
@@ -494,11 +524,7 @@ function AdminTournamentScreenInner({
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => {
-              setPairA(null);
-              setPairB(null);
-              setPairOpen(true);
-            }}
+            onClick={openPairModal}
             disabled={busy || unpaired.length < 2}
           >
             <UserPlus size={16} /> {t("admin.teams.assign")}

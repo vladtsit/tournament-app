@@ -47,6 +47,7 @@
     "partner_not_registered": "Ese jugador no está inscrito para jugar.",
     "not_registered": "Primero marca que vas a jugar.",
     "partner_is_self": "Elige a otra persona como compañero.",
+    "players_cannot_form_teams": "Solo el administrador puede formar equipos en este grupo.",
     "idempotency_conflict": "Petición conflictiva — inténtalo de nuevo.",
     "invalid_set_count": "Introduce un marcador.",
     "invalid_set_score": "El marcador no puede ser igual — un equipo debe ganar.",
@@ -107,6 +108,8 @@
     "pairWith": "Emparejar con {{name}}",
     "lastPartner": "Última pareja",
     "confirmPair": "¿Emparejarte con {{name}}?",
+    "adminOnlyTitle": "El admin formará los equipos",
+    "adminOnlyBody": "En este torneo el admin empareja a los jugadores. Tu equipo aparecerá aquí cuando esté listo.",
     "leave": "Salir del equipo",
     "leaveConfirm": "¿Salir del equipo ({{name}})? Ambos volveréis a la lista de jugadores que buscan compañero."
   },

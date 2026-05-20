@@ -110,6 +110,21 @@ app.http("teamCreate", {
       );
     }
 
+    // Group-level toggle: when playersCanFormTeams === false, only admins
+    // can pair players (via the AdminTournamentScreen).
+    const groupRead = await containers_
+      .groups()
+      .item(ctx.groupId, ctx.groupId)
+      .read<{ settings?: { playersCanFormTeams?: boolean } }>()
+      .catch(() => null);
+    if (groupRead?.resource?.settings?.playersCanFormTeams === false) {
+      return jsonError(
+        403,
+        "players_cannot_form_teams",
+        "Team formation is restricted to admins.",
+      );
+    }
+
     try {
       const result = await withIdempotency(
         ctx.userId,

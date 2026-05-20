@@ -47,6 +47,7 @@
     "partner_not_registered": "That player isn't registered to play.",
     "not_registered": "Mark yourself as playing first.",
     "partner_is_self": "Pick someone else as a partner.",
+    "players_cannot_form_teams": "Only the admin can form teams in this group.",
     "idempotency_conflict": "Conflicting request — please retry.",
     "invalid_set_count": "Enter a game score.",
     "invalid_set_score": "Scores must differ — one team has to win.",
@@ -107,6 +108,8 @@
     "pairWith": "Pair up with {{name}}",
     "lastPartner": "Last partner",
     "confirmPair": "Pair up with {{name}}?",
+    "adminOnlyTitle": "Admin will form teams",
+    "adminOnlyBody": "The admin pairs players for this tournament. Sit tight — your team will appear here once it’s set.",
     "leave": "Leave team",
     "leaveConfirm": "Leave the team ({{name}})? Both of you will go back to the looking-for-teammate list."
   },
