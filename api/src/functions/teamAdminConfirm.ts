@@ -79,7 +79,7 @@ async function handle(
 }
 
 app.http("teamAdminConfirm", {
-  route: "admin/teams/{teamId}/confirm",
+  route: "teams/{teamId}/admin-confirm",
   methods: ["POST", "DELETE"],
   authLevel: "anonymous",
   handler: async (req: HttpRequest) => handle(req, req.method === "POST"),

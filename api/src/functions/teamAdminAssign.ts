@@ -45,7 +45,7 @@ interface TeamSlotDoc {
 }
 
 app.http("teamAdminAssign", {
-  route: "admin/tournaments/{tournamentId}/teams",
+  route: "tournaments/{tournamentId}/admin/teams",
   methods: ["POST"],
   authLevel: "anonymous",
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {

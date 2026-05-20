@@ -19,7 +19,7 @@ interface TournamentDoc {
 }
 
 app.http("teamAdminDisband", {
-  route: "admin/teams/{teamId}",
+  route: "teams/{teamId}/admin-disband",
   methods: ["DELETE"],
   authLevel: "anonymous",
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {

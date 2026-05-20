@@ -55,7 +55,7 @@ interface RegistrationDoc {
 }
 
 app.http("adminRegistrationAdd", {
-  route: "admin/tournaments/{tournamentId}/registrations",
+  route: "tournaments/{tournamentId}/admin/registrations",
   methods: ["POST"],
   authLevel: "anonymous",
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {

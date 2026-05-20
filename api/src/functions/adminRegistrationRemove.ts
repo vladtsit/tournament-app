@@ -20,7 +20,7 @@ interface TournamentDoc {
 }
 
 app.http("adminRegistrationRemove", {
-  route: "admin/tournaments/{tournamentId}/registrations/{userId}",
+  route: "tournaments/{tournamentId}/admin/registrations/{userId}",
   methods: ["DELETE"],
   authLevel: "anonymous",
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {

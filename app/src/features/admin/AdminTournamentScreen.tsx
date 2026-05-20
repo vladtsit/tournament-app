@@ -229,7 +229,7 @@ function AdminTournamentScreenInner({
   // ── Per-team admin actions ───────────────────────────────────────────
   const toggleConfirm = (team: TeamDoc): Promise<void> =>
     run(async () => {
-      await api(`/api/admin/teams/${team.id}/confirm`, {
+      await api(`/api/teams/${team.id}/admin-confirm`, {
         method: team.confirmedByAdmin ? "DELETE" : "POST",
         body: {},
       });
@@ -243,7 +243,7 @@ function AdminTournamentScreenInner({
       ) {
         return;
       }
-      await api(`/api/admin/teams/${team.id}`, {
+      await api(`/api/teams/${team.id}/admin-disband`, {
         method: "DELETE",
         body: {},
       });
@@ -258,7 +258,7 @@ function AdminTournamentScreenInner({
         return;
       }
       await api(
-        `/api/admin/tournaments/${tournament.id}/registrations/${r.userId}`,
+        `/api/tournaments/${tournament.id}/admin/registrations/${r.userId}`,
         { method: "DELETE", body: {} },
       );
     });
@@ -266,7 +266,7 @@ function AdminTournamentScreenInner({
   const unlockRegistration = (r: RegistrationDoc): Promise<void> =>
     run(async () => {
       await api(
-        `/api/admin/tournaments/${tournament.id}/registrations/${r.userId}/unlock`,
+        `/api/tournaments/${tournament.id}/admin/registrations/${r.userId}/unlock`,
         { method: "POST", body: {} },
       );
     });
@@ -308,7 +308,7 @@ function AdminTournamentScreenInner({
     run(async () => {
       setAddBusy(true);
       try {
-        await api(`/api/admin/tournaments/${tournament.id}/registrations`, {
+        await api(`/api/tournaments/${tournament.id}/admin/registrations`, {
           method: "POST",
           body: { userId },
         });
@@ -326,7 +326,7 @@ function AdminTournamentScreenInner({
   const submitPair = (): Promise<void> =>
     run(async () => {
       if (!pairA || !pairB || pairA === pairB) return;
-      await api(`/api/admin/tournaments/${tournament.id}/teams`, {
+      await api(`/api/tournaments/${tournament.id}/admin/teams`, {
         method: "POST",
         body: { userIdA: pairA, userIdB: pairB },
       });
