@@ -218,7 +218,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           idempotencyKey: `reg-${data.tournament.id}-${crypto.randomUUID()}`,
         });
         haptic.selection();
-        await reload();
+        await silentReload();
       } catch (err) {
         haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
@@ -226,7 +226,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
         setBusy(false);
       }
     },
-    [data, reload],
+    [data, silentReload],
   );
 
   const startTournament = useCallback(async (): Promise<void> => {
@@ -424,7 +424,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
       <AdminTournamentScreen
         groupId={groupId}
         current={data as Parameters<typeof AdminTournamentScreen>[0]["current"]}
-        onReload={reload}
+        onReload={silentReload}
       />
     );
   }
@@ -534,7 +534,7 @@ export function TournamentScreen({ isAdmin, groupId }: Props): JSX.Element {
           groupId={groupId}
           team={data.team}
           canFormTeams={data.group?.playersCanFormTeams !== false}
-          onChange={reload}
+          onChange={silentReload}
         />
       ) : null}
 
@@ -990,6 +990,30 @@ function LiveSection({
     }
   }, [tournamentId]);
 
+  // Background refresh that doesn't trigger the full-screen spinner — used
+  // after in-page mutations (submit/confirm/dispute/edit/delete) so the
+  // scroll position is preserved.
+  const silentReload = useCallback(async (): Promise<void> => {
+    try {
+      const [opp, ms, lb] = await Promise.all([
+        api<{ opponents: OpponentRow[] }>(
+          `/api/tournaments/${tournamentId}/available-opponents`,
+        ),
+        api<{ matches: MatchRow[] }>(
+          `/api/tournaments/${tournamentId}/matches`,
+        ),
+        api<LeaderboardResponse>(
+          `/api/tournaments/${tournamentId}/leaderboard`,
+        ),
+      ]);
+      setOpponents(opp.opponents);
+      setMatches(ms.matches);
+      setBoard(lb);
+    } catch {
+      // keep last good state
+    }
+  }, [tournamentId]);
+
   useEffect(() => {
     void reload();
   }, [reload]);
@@ -1020,14 +1044,14 @@ function LiveSection({
       setScoreB("");
       setOpponentId("");
       haptic.notify("success");
-      await reload();
+      await silentReload();
     } catch (err) {
       haptic.notify("error");
       setError(err instanceof ApiClientError ? err.code : "unknown");
     } finally {
       setBusy(false);
     }
-  }, [tournamentId, opponentId, scoreA, scoreB, reload]);
+  }, [tournamentId, opponentId, scoreA, scoreB, silentReload]);
 
   const confirmMatch = useCallback(
     async (matchId: string): Promise<void> => {
@@ -1039,7 +1063,7 @@ function LiveSection({
           body: {},
         });
         haptic.notify("success");
-        await reload();
+        await silentReload();
       } catch (err) {
         haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
@@ -1047,7 +1071,7 @@ function LiveSection({
         setBusy(false);
       }
     },
-    [reload],
+    [silentReload],
   );
 
   const disputeMatch = useCallback(
@@ -1060,7 +1084,7 @@ function LiveSection({
           body: {},
         });
         haptic.notify("warning");
-        await reload();
+        await silentReload();
       } catch (err) {
         haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
@@ -1068,7 +1092,7 @@ function LiveSection({
         setBusy(false);
       }
     },
-    [reload],
+    [silentReload],
   );
 
   const adminEditMatch = useCallback(
@@ -1100,7 +1124,7 @@ function LiveSection({
           body: { sets },
         });
         haptic.notify("success");
-        await reload();
+        await silentReload();
       } catch (err) {
         haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
@@ -1108,7 +1132,7 @@ function LiveSection({
         setBusy(false);
       }
     },
-    [reload, t],
+    [silentReload, t],
   );
 
   const adminForceConfirm = useCallback(
@@ -1121,7 +1145,7 @@ function LiveSection({
           body: { status: "confirmed" },
         });
         haptic.notify("success");
-        await reload();
+        await silentReload();
       } catch (err) {
         haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
@@ -1129,7 +1153,7 @@ function LiveSection({
         setBusy(false);
       }
     },
-    [reload],
+    [silentReload],
   );
 
   const adminDeleteMatch = useCallback(
@@ -1146,7 +1170,7 @@ function LiveSection({
       try {
         await api(`/api/matches/${m.id}`, { method: "DELETE" });
         haptic.notify("success");
-        await reload();
+        await silentReload();
       } catch (err) {
         haptic.notify("error");
         setError(err instanceof ApiClientError ? err.code : "unknown");
@@ -1154,7 +1178,7 @@ function LiveSection({
         setBusy(false);
       }
     },
-    [reload, t],
+    [silentReload, t],
   );
 
   const hasAnySet =
