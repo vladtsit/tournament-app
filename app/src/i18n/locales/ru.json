@@ -172,6 +172,7 @@
       "search": "Поиск участников группы",
       "removeConfirm": "Убрать {{name}} из турнира?",
       "alreadyRegistered": "Уже в турнире",
+      "addedByAdmin": "Добавлен админом",
       "resigned": "Снялся",
       "unlock": "Разблокировать",
       "empty": "Ничего не найдено."

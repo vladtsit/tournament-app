@@ -28,6 +28,8 @@ interface RegistrationDoc {
   bbq: boolean;
   resigned?: boolean;
   resignedAt?: string;
+  addedByAdminUserId?: string;
+  addedByAdminAt?: string;
   updatedAt: string;
 }
 

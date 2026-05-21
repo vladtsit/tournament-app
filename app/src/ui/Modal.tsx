@@ -29,21 +29,30 @@ export function Modal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
+  // Body-scroll lock + initial focus: run on the rising edge of `open`
+  // only. Depending on `onClose` here causes the dialog to steal focus from
+  // whatever the user is typing in every time the parent re-renders.
   useEffect(() => {
     if (!open) return;
     previousFocusRef.current = document.activeElement as HTMLElement | null;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    queueMicrotask(() => dialogRef.current?.focus());
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      previousFocusRef.current?.focus?.();
+    };
+  }, [open]);
+
+  // ESC handler depends on the latest onClose, so keep it in its own effect.
+  useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    // Move focus into the dialog for screen readers.
-    queueMicrotask(() => dialogRef.current?.focus());
     return () => {
-      document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKey);
-      previousFocusRef.current?.focus?.();
     };
   }, [open, onClose]);
 

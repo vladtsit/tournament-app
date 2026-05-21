@@ -172,6 +172,7 @@
       "search": "Search group members",
       "removeConfirm": "Remove {{name}} from the tournament?",
       "alreadyRegistered": "Already in",
+      "addedByAdmin": "Added by admin",
       "resigned": "Resigned",
       "unlock": "Unlock",
       "empty": "No matches."

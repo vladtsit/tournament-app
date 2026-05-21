@@ -42,6 +42,7 @@ interface RegistrationDoc {
   playing: boolean;
   bbq: boolean;
   resigned?: boolean;
+  addedByAdminUserId?: string;
 }
 
 interface TeamDoc {
@@ -470,11 +471,23 @@ function AdminTournamentScreenInner({
           ) : (
             regs.map((r) => {
               const team = playerToTeam.get(r.userId);
+              const addedByAdmin = !!r.addedByAdminUserId;
               return (
                 <ListRow
                   key={r.userId}
                   leading={<Avatar id={r.userId} name={fullName(r)} />}
-                  primary={fullName(r)}
+                  primary={
+                    addedByAdmin ? (
+                      <Inline gap="xs" align="center" wrap>
+                        <span>{fullName(r)}</span>
+                        <Badge variant="warning">
+                          {t("admin.players.addedByAdmin")}
+                        </Badge>
+                      </Inline>
+                    ) : (
+                      fullName(r)
+                    )
+                  }
                   secondary={
                     team
                       ? `${t("admin.teams.title")}: ${teamLabel(team)}`
@@ -750,36 +763,33 @@ function AdminTournamentScreenInner({
           </Inline>
           {membersLoading ? <Spinner /> : null}
           <Stack gap="xs">
-            {members.length === 0 && !membersLoading ? (
-              <EmptyState
-                icon={<Users />}
-                title={t("admin.players.empty")}
-                body=""
-              />
-            ) : (
-              members.map((m) => (
+            {(() => {
+              const addable = members.filter((m) => !m.alreadyRegistered);
+              if (addable.length === 0 && !membersLoading) {
+                return (
+                  <EmptyState
+                    icon={<Users />}
+                    title={t("admin.players.empty")}
+                    body=""
+                  />
+                );
+              }
+              return addable.map((m) => (
                 <ListRow
                   key={m.userId}
                   leading={<Avatar id={m.userId} name={fullName(m)} />}
                   primary={fullName(m)}
-                  secondary={
-                    m.alreadyRegistered ? (
-                      <Badge variant="info">
-                        {t("admin.players.alreadyRegistered")}
-                      </Badge>
-                    ) : null
-                  }
                   trailing={
                     <IconButton
                       aria-label={t("admin.players.add")}
                       onClick={() => void addPlayer(m.userId)}
-                      disabled={busy || addBusy || m.isPlaying === true}
+                      disabled={busy || addBusy}
                       icon={<Plus size={16} />}
                     />
                   }
                 />
-              ))
-            )}
+              ));
+            })()}
           </Stack>
         </Stack>
       </Modal>

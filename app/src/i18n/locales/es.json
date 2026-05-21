@@ -172,6 +172,7 @@
       "search": "Buscar miembros del grupo",
       "removeConfirm": "¿Quitar a {{name}} del torneo?",
       "alreadyRegistered": "Ya inscrito",
+      "addedByAdmin": "Añadido por admin",
       "resigned": "Renunció",
       "unlock": "Desbloquear",
       "empty": "Sin resultados."
