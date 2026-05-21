@@ -28,6 +28,7 @@ export function Modal({
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const previousScrollRef = useRef<number>(0);
 
   // Body-scroll lock + initial focus: run on the rising edge of `open`
   // only. Depending on `onClose` here causes the dialog to steal focus from
@@ -35,12 +36,20 @@ export function Modal({
   useEffect(() => {
     if (!open) return;
     previousFocusRef.current = document.activeElement as HTMLElement | null;
+    previousScrollRef.current = window.scrollY;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    queueMicrotask(() => dialogRef.current?.focus());
+    // `preventScroll` keeps the underlying page anchored; otherwise focusing
+    // the portal-mounted dialog can scroll the document to the top on some
+    // mobile browsers (notably the Telegram WebApp shell on iOS).
+    queueMicrotask(() => dialogRef.current?.focus({ preventScroll: true }));
     return () => {
       document.body.style.overflow = prevOverflow;
-      previousFocusRef.current?.focus?.();
+      previousFocusRef.current?.focus?.({ preventScroll: true });
+      // Some mobile WebViews reset scroll when overflow toggles; restore it.
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: previousScrollRef.current, behavior: "auto" });
+      }
     };
   }, [open]);
 
